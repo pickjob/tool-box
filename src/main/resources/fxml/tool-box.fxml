@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<?import java.lang.String?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="main.controller.MainController"
+      minWidth="300"
+      minHeight="400"
+      alignment="CENTER">
+  <Label text="Hello World!" />
+  <stylesheets>
+    <URL value="@../css/tool-box.css" />
+  </stylesheets>
+</VBox>

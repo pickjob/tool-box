@@ -1,0 +1,74 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'idea'
+    id 'com.zyxist.chainsaw' version '0.3.1'
+}
+
+group 'pickjob'
+version '0.0.1'
+javaModule.name = 'pickjob.tool.box'
+mainClassName = 'main.app.ToolBox'
+ext.os = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'win':'linux'
+
+dependencies {
+    // javafx
+    implementation "org.openjfx:javafx-base:12:${os}"
+    implementation "org.openjfx:javafx-graphics:12:${os}"
+    implementation "org.openjfx:javafx-controls:12:${os}"
+    implementation "org.openjfx:javafx-fxml:12:${os}"
+    implementation "org.openjfx:javafx-media:12:${os}"
+    // logging
+    implementation 'org.apache.logging.log4j:log4j-api:2.11.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
+    // apache commons
+    implementation 'org.apache.commons:commons-lang3:3.8'
+}
+
+repositories {
+    maven {
+        url "https://maven.aliyun.com/repository/central"
+    }
+}
+/*
+ *  Plugin: java配置
+ */
+compileJava {
+    sourceCompatibility = 12
+    targetCompatibility = 12
+    options.encoding = 'UTF-8'
+}
+compileTestJava {
+    sourceCompatibility = 12
+    targetCompatibility = 12
+    options.encoding = 'UTF-8'
+}
+processResources {
+    destinationDir = sourceSets.main.java.outputDir
+}
+processTestResources {
+    destinationDir = sourceSets.test.java.outputDir
+}
+test {
+    // JUNIT5
+    useJUnitPlatform()
+}
+/*
+ * Plugin: Appliction
+ */
+run {
+    main = "${mainClassName}"
+}
+/*
+ *  Plugin: idea 配置
+ */
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+        inheritOutputDirs = false
+        outputDir = sourceSets.main.java.outputDir
+        testOutputDir = sourceSets.test.java.outputDir
+    }
+}
