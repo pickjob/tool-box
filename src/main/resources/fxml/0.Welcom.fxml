@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<?import java.lang.String?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="app.controller.WelcomController">
+    <Label text="Hello World!" />
+    <stylesheets>
+        <URL value="@../css/0.Welcome.css" />
+    </stylesheets>
+</VBox>

@@ -1,29 +1,40 @@
+import java.nio.file.Files
+import java.nio.file.Path
+
 plugins {
     id 'java'
-    id 'application'
     id 'idea'
-    id 'com.zyxist.chainsaw' version '0.3.1'
+    id 'application'
 }
+
 
 group 'pickjob'
 version '0.0.1'
-javaModule.name = 'pickjob.tool.box'
-mainClassName = 'main.app.ToolBox'
+mainClassName = 'app.App'
+ext.moduleMainClassName = 'pickjob.tool.box/app.App'
 ext.os = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'win':'linux'
 
 dependencies {
+    implementation 'org.apache.commons:commons-lang3:3.8'
+    // bootstrap
+    implementation 'org.kordamp.bootstrapfx:bootstrapfx-core:0.2.4'
+
     // javafx
-    implementation "org.openjfx:javafx-base:12:${os}"
-    implementation "org.openjfx:javafx-graphics:12:${os}"
-    implementation "org.openjfx:javafx-controls:12:${os}"
-    implementation "org.openjfx:javafx-fxml:12:${os}"
-    implementation "org.openjfx:javafx-media:12:${os}"
+    implementation "org.openjfx:javafx-base:14:${os}"
+    implementation "org.openjfx:javafx-graphics:14:${os}"
+    implementation "org.openjfx:javafx-controls:14:${os}"
+    implementation "org.openjfx:javafx-fxml:14:${os}"
+    implementation "org.openjfx:javafx-media:14:${os}"
+    implementation "org.openjfx:javafx-swing:14:${os}"
+    implementation "org.openjfx:javafx-web:14:${os}"
     // logging
     implementation 'org.apache.logging.log4j:log4j-api:2.11.1'
     implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
     // apache commons
     implementation 'org.apache.commons:commons-lang3:3.8'
+    // lettuce
+    implementation 'io.lettuce:lettuce-core:5.2.2.RELEASE'
 }
 
 repositories {
@@ -35,30 +46,82 @@ repositories {
  *  Plugin: java配置
  */
 compileJava {
-    sourceCompatibility = 12
-    targetCompatibility = 12
+    sourceCompatibility = 13
+    targetCompatibility = 13
     options.encoding = 'UTF-8'
-}
-compileTestJava {
-    sourceCompatibility = 12
-    targetCompatibility = 12
-    options.encoding = 'UTF-8'
+    options.compilerArgs = [
+            '--module-path', classpath.asPath
+    ]
 }
 processResources {
-    destinationDir = sourceSets.main.java.outputDir
+    outputs.upToDateWhen { false }
+    from ('src/main/resources') {
+        into '../../classes/java/main'
+    }
+    doLast {
+        Files.walk(Path.of(destinationDir.toURI()))
+                .sorted({ p1, p2 ->
+                    return p2.compareTo(p1)
+                })
+                .map({ p ->
+                    return p.toFile()
+                })
+                .forEach({ p ->
+                    p.delete()
+                })
+    }
 }
-processTestResources {
-    destinationDir = sourceSets.test.java.outputDir
-}
-test {
-    // JUNIT5
-    useJUnitPlatform()
+jar {
+    manifest {
+        attributes 'Main-Class': ""
+        attributes 'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' ')
+    }
 }
 /*
  * Plugin: Appliction
  */
 run {
-    main = "${mainClassName}"
+    jvmArgs = [
+            '--module-path', classpath.asPath,
+            '--module', "$moduleMainClassName"
+    ]
+    systemProperties.put("file.encoding", "UTF-8")
+}
+startScripts {
+    defaultJvmOpts = [
+            '-Dfile.encoding=UTF-8'
+    ]
+    doLast{
+        def bashFile = new File(outputDir, applicationName)
+        String bashContent = bashFile.text
+        bashFile.text = bashContent.lines().collect(
+                {new StringBuilder()},
+                {sb, line ->
+                    if (!line.startsWith("CLASSPATH=")) {
+                        line = line.replaceAll('-classpath "\\\\"\\$CLASSPATH\\\\""', '--module-path \\$APP_HOME/lib' + " --module $moduleMainClassName")
+                        sb.append(line)
+                        sb.append("\n")
+                    }
+                },
+                {sb1, sb2 ->
+                    sb1.append(sb2)
+                }).toString()
+
+        def batFile = new File(outputDir, applicationName + '.bat')
+        String batContent = batFile.text
+        batFile.text = batContent.lines().collect(
+                {new StringBuilder()},
+                {sb, line ->
+                    if (!line.startsWith("set CLASSPATH=")) {
+                        line = line.replaceAll('-classpath "%CLASSPATH%"', '--module-path %APP_HOME%/lib' + " --module $moduleMainClassName")
+                        sb.append(line)
+                        sb.append("\r\n")
+                    }
+                },
+                {sb1, sb2 ->
+                    sb1.append(sb2)
+                }).toString()
+    }
 }
 /*
  *  Plugin: idea 配置
@@ -67,8 +130,5 @@ idea {
     module {
         downloadJavadoc = true
         downloadSources = true
-        inheritOutputDirs = false
-        outputDir = sourceSets.main.java.outputDir
-        testOutputDir = sourceSets.test.java.outputDir
     }
 }

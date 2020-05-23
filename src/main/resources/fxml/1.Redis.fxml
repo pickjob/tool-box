@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<SplitPane xmlns:fx="http://javafx.com/fxml" fx:controller="app.controller.RedisController">
+    <VBox>
+        <TextField fx:id="keyFilterTextField" promptText="Keys" />
+        <TreeTableView fx:id="keyValueTreeTableView" prefHeight="${keyValueTreeTableView.parent.height}" />
+    </VBox>
+    <stylesheets>
+        <URL value="@../css/1.Redis.css" />
+    </stylesheets>
+</SplitPane>
+

@@ -5,11 +5,18 @@ module pickjob.tool.box {
     requires javafx.fxml;
     // log4j
     requires org.apache.logging.log4j;
+    requires org.apache.commons.lang3;
+    // lettuce
+    requires lettuce.core;
 
-    opens main.app to javafx.graphics
+
+    opens app to javafx.graphics
             , javafx.fxml
             ;
-    opens main.controller to javafx.graphics
+    opens app.controller to javafx.graphics
+            , javafx.fxml
+            ;
+    opens app.controller.common to javafx.graphics
             , javafx.fxml
             ;
 }

@@ -1,0 +1,11 @@
+* {
+    -fx-font-family: "Fira Code Medium";
+    -fx-font-size: 16;
+}
+
+GridPane {
+    -fx-alignment: center;
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+    -fx-padding: 10;
+}
