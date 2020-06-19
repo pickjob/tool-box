@@ -2,6 +2,7 @@ package app.controller;
 
 import app.common.Context;
 import app.controller.common.BaseController;
+import app.data.redis.HashData;
 import app.data.redis.RedisData;
 import app.data.redis.RedisDataType;
 import io.lettuce.core.KeyScanCursor;
@@ -12,13 +13,21 @@ import io.lettuce.core.api.sync.RedisCommands;
 import javafx.application.Platform;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableListValue;
 import javafx.beans.value.ObservableObjectValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,17 +66,20 @@ public class RedisController extends BaseController {
         TreeTableColumn<RedisData<?>, String> key = new TreeTableColumn<>("KEY");
         key.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData<?>, String> p) -> {
             RedisData<?> redisData = p.getValue().getValue();
-            return new ReadOnlyStringWrapper(redisData.getKey());
-        });
-        TreeTableColumn<RedisData<?>, String> type = new TreeTableColumn<>("TYPE");
-        type.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData<?>, String> p) -> {
-            RedisData<?> redisData = p.getValue().getValue();
-            return new ReadOnlyStringWrapper(RedisDataType.toString(redisData.getType()));
+            return new ReadOnlyStringWrapper(redisData.getKey() + "[" + RedisDataType.toString(redisData.getType()) + "]");
         });
         TreeTableColumn<RedisData<?>, RedisData<?>> value = new TreeTableColumn<>("value");
+        value.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData<?>, RedisData<?>> p) -> {
+            RedisData<?> redisData = p.getValue().getValue();
+            return new ObjectBinding<RedisData<?>>() {
+                @Override
+                protected RedisData<?> computeValue() {
+                    return redisData;
+                }
+            };
+        });
         value.setCellFactory( (TreeTableColumn<RedisData<?>, RedisData<?>> column) -> {
             return new TreeTableCell<RedisData<?>, RedisData<?>>() {
-
                 @Override
                 protected void updateItem(RedisData<?> item, boolean empty) {
                     super.updateItem(item, empty);
@@ -79,32 +91,36 @@ public class RedisController extends BaseController {
                             case STRING:
                                 setText(item.getValue() + "");
                                 break;
-                            case NONE:
-                                setText("");
+                            case HASH:
+                                Map<String, String> map = ((RedisData<Map<String, String>>) item).getValue();
+                                List<HashData> list = new ArrayList<>();
+                                for (String key : map.keySet()) {
+                                    list.add(new HashData(key, map.get(key)));
+                                }
+                                ObservableList<HashData> items = FXCollections.observableList(list);
+                                TableView<HashData> tableView = new TableView<>();
+                                TableColumn<HashData, String> keyCol = new TableColumn("Key");
+                                keyCol.setCellValueFactory(new PropertyValueFactory<>("Key"));
+                                TableColumn<HashData, String> valueCol = new TableColumn("Value");
+                                valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
+                                tableView.getColumns().addAll(keyCol, valueCol);
+                                tableView.setItems(items);
+                                setGraphic(tableView);
                                 break;
+                            case NONE:
                             case UNKNOW:
+                                setText("");
                                 break;
                         }
                     }
                 }
             };
         } );
-        value.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData<?>, RedisData<?>> p) -> {
-            RedisData<?> redisData = p.getValue().getValue();
-            return new ObjectBinding<RedisData<?>>() {
-                @Override
-                protected RedisData<?> computeValue() {
-                    return redisData;
-                }
-            };
-        });
         key.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(3));
-        value.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(3));
-        type.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(3));
-        Object[] array = new TreeTableColumn[3];
+        value.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(3).multiply(2));
+        Object[] array = new TreeTableColumn[2];
         array[0] = key;
-        array[1] = type;
-        array[2] = value;
+        array[1] = value;
         return array;
     }
 
@@ -122,11 +138,10 @@ public class RedisController extends BaseController {
 
     private RedisData<?> buildRedisData(RedisCommands<String, String> redisCommands) {
         RedisData<?> rootRedisData = new RedisData<>("Root");
-        ScanArgs scanArgs = ScanArgs.Builder
-                .limit(10);
-        KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs);
-        while (!keyScanCursor.isFinished()) {
+        ScanArgs scanArgs = ScanArgs.Builder.limit(10);
+        for (KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs); true;) {
             for (String key : keyScanCursor.getKeys()) {
+                if (logger.isDebugEnabled()) logger.debug("redis key: {}", key);
                 Map<String, RedisData<?>> m = rootRedisData.getChildren();
                 StringBuilder sb = new StringBuilder();
                 String[] keyPieces = key.split(":");
@@ -142,6 +157,10 @@ public class RedisController extends BaseController {
                             case STRING:
                                 ((RedisData<String>)data).setValue(redisCommands.get(data.getKey()));
                                 break;
+                            case HASH:
+                                Map<String, String> map = redisCommands.hgetall(data.getKey());
+                                ((RedisData<Map<String, String>>)data).setValue(map);
+                                break;
                             default:
                                 break;
                         }
@@ -150,7 +169,11 @@ public class RedisController extends BaseController {
                     m = m.get(keyPiece).getChildren();
                 }
             }
-            keyScanCursor = redisCommands.scan(keyScanCursor, scanArgs);
+            if (keyScanCursor.isFinished()) {
+                break;
+            } else {
+                keyScanCursor = redisCommands.scan(keyScanCursor);
+            }
         }
         return rootRedisData;
     }
@@ -173,6 +196,7 @@ public class RedisController extends BaseController {
         if (StringUtils.isNotBlank(index)) {
             redisUrlBuilder.append("/").append(index);
         }
+        if (logger.isDebugEnabled()) logger.debug("redisUrl: {}", redisUrlBuilder.toString());
         RedisClient redisClient = RedisClient.create(redisUrlBuilder.toString());
         StatefulRedisConnection<String, String> connection = redisClient.connect();
         return connection.sync();

@@ -1,21 +1,27 @@
-import java.nio.file.Files
-import java.nio.file.Path
-
 plugins {
     id 'java'
     id 'idea'
     id 'application'
 }
-
-
 group 'pickjob'
 version '0.0.1'
-mainClassName = 'app.App'
-ext.moduleMainClassName = 'pickjob.tool.box/app.App'
 ext.os = org.gradle.internal.os.OperatingSystem.current().isWindows() ? 'win':'linux'
 
+application {
+    mainModule = 'pickjob.tool.box'
+    mainClass = 'app.App'
+}
+
 dependencies {
+    // logging
+    implementation 'org.apache.logging.log4j:log4j-api:2.11.1'
+    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
+    // apache commons
     implementation 'org.apache.commons:commons-lang3:3.8'
+    // lettuce
+    implementation 'io.lettuce:lettuce-core:5.2.2.RELEASE'
+
     // bootstrap
     implementation 'org.kordamp.bootstrapfx:bootstrapfx-core:0.2.4'
 
@@ -27,101 +33,26 @@ dependencies {
     implementation "org.openjfx:javafx-media:14:${os}"
     implementation "org.openjfx:javafx-swing:14:${os}"
     implementation "org.openjfx:javafx-web:14:${os}"
-    // logging
-    implementation 'org.apache.logging.log4j:log4j-api:2.11.1'
-    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
-    // apache commons
-    implementation 'org.apache.commons:commons-lang3:3.8'
-    // lettuce
-    implementation 'io.lettuce:lettuce-core:5.2.2.RELEASE'
-}
-
-repositories {
-    maven {
-        url "https://maven.aliyun.com/repository/central"
-    }
 }
 /*
  *  Plugin: java配置
  */
+java {
+    modularity.inferModulePath = true
+}
 compileJava {
-    sourceCompatibility = 13
-    targetCompatibility = 13
+    sourceCompatibility = 14
+    targetCompatibility = 14
     options.encoding = 'UTF-8'
-    options.compilerArgs = [
-            '--module-path', classpath.asPath
-    ]
-}
-processResources {
-    outputs.upToDateWhen { false }
-    from ('src/main/resources') {
-        into '../../classes/java/main'
-    }
-    doLast {
-        Files.walk(Path.of(destinationDir.toURI()))
-                .sorted({ p1, p2 ->
-                    return p2.compareTo(p1)
-                })
-                .map({ p ->
-                    return p.toFile()
-                })
-                .forEach({ p ->
-                    p.delete()
-                })
-    }
-}
-jar {
-    manifest {
-        attributes 'Main-Class': ""
-        attributes 'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' ')
-    }
 }
 /*
  * Plugin: Appliction
  */
 run {
     jvmArgs = [
-            '--module-path', classpath.asPath,
-            '--module', "$moduleMainClassName"
+            '-Dio.netty.tryUnsafe=false'
     ]
     systemProperties.put("file.encoding", "UTF-8")
-}
-startScripts {
-    defaultJvmOpts = [
-            '-Dfile.encoding=UTF-8'
-    ]
-    doLast{
-        def bashFile = new File(outputDir, applicationName)
-        String bashContent = bashFile.text
-        bashFile.text = bashContent.lines().collect(
-                {new StringBuilder()},
-                {sb, line ->
-                    if (!line.startsWith("CLASSPATH=")) {
-                        line = line.replaceAll('-classpath "\\\\"\\$CLASSPATH\\\\""', '--module-path \\$APP_HOME/lib' + " --module $moduleMainClassName")
-                        sb.append(line)
-                        sb.append("\n")
-                    }
-                },
-                {sb1, sb2 ->
-                    sb1.append(sb2)
-                }).toString()
-
-        def batFile = new File(outputDir, applicationName + '.bat')
-        String batContent = batFile.text
-        batFile.text = batContent.lines().collect(
-                {new StringBuilder()},
-                {sb, line ->
-                    if (!line.startsWith("set CLASSPATH=")) {
-                        line = line.replaceAll('-classpath "%CLASSPATH%"', '--module-path %APP_HOME%/lib' + " --module $moduleMainClassName")
-                        sb.append(line)
-                        sb.append("\r\n")
-                    }
-                },
-                {sb1, sb2 ->
-                    sb1.append(sb2)
-                }).toString()
-    }
 }
 /*
  *  Plugin: idea 配置
@@ -130,5 +61,24 @@ idea {
     module {
         downloadJavadoc = true
         downloadSources = true
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url "https://maven.aliyun.com/repository/central"
+    }
+    maven {
+        url 'https://repo.spring.io/libs-release'
+    }
+    maven {
+        url 'https://repository.apache.org/content/repositories/releases'
+    }
+    maven {
+        url 'https://jcenter.bintray.com'
+    }
+    maven {
+        url 'https://repo1.maven.org/maven2'
     }
 }

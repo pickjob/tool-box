@@ -9,7 +9,6 @@ module pickjob.tool.box {
     // lettuce
     requires lettuce.core;
 
-
     opens app to javafx.graphics
             , javafx.fxml
             ;
@@ -18,5 +17,7 @@ module pickjob.tool.box {
             ;
     opens app.controller.common to javafx.graphics
             , javafx.fxml
+            ;
+    opens app.data.redis to javafx.base
             ;
 }

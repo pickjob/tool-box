@@ -21,7 +21,11 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * @author pickjob@126.com
@@ -29,47 +33,54 @@ import java.util.Arrays;
  **/
 public class App extends Application {
     private static final Logger logger = LogManager.getLogger(App.class);
+    private static final int MAX_DEEPTH = 1;
 
     @Override
     public void start(final Stage mainStage) throws Exception {
         Font.loadFont(App.class.getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
-        File fxmlDirectory = new File(App.class.getResource("/fxml").getPath());
-        TabPane tabPane = new TabPane();
-        if (fxmlDirectory.isDirectory()) {
-            File[] files = fxmlDirectory.listFiles();
-            Arrays.sort(files, (f1, f2) -> {
-                return f1.getName().compareTo(f2.getName());
-            });
-            int selectIdx = -1;
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    continue;
-                }
-                FXMLLoader loader = new FXMLLoader();
-                loader.setBuilderFactory(new JavaFXBuilderFactory());
-                loader.setLocation(f.toURI().toURL());
-                Parent content = loader.load();
-                final BaseController controller = loader.getController();
-                controller.init(Context.getInstance());
-                Tab tab = new Tab(f.getName());
-                tab.setContent(content);
-                if (controller.isNeedLogin()) {
-                    tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
-                        if (newValue) {
-                            Stage loginStage = createLoginStage(mainStage);
-                            Platform.runLater(() -> {
-                                Context.getInstance().setNextController(controller);
-                                loginStage.show();
-                            });
-                        }
-                    });
-                }
-                tabPane.getTabs().add(tab);
-                selectIdx++;
+        URI uri = App.class.getResource("/fxml").toURI();
+        List<Path> locations = new ArrayList<>();
+        Path path = null;
+        if (uri.getScheme().equals("jar")) {
+            FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap());
+            path = fileSystem.getPath("/fxml");
+        } else {
+            path = Paths.get(uri);
+        }
+        Stream<Path> stream = Files.walk(path, MAX_DEEPTH);
+        stream.forEach(p -> {
+            if (!Files.isDirectory(p)) {
+                locations.add(p);
             }
+        });
+        TabPane tabPane = new TabPane();
+        for (Path location : locations) {
+            int selectIdx = -1;
+            FXMLLoader loader = new FXMLLoader();
+            loader.setBuilderFactory(new JavaFXBuilderFactory());
+            loader.setLocation(location.toUri().toURL());
+            Parent content = loader.load();
+            final BaseController controller = loader.getController();
+            controller.init(Context.getInstance());
+            Tab tab = new Tab(location.getFileName().toString());
+            tab.setContent(content);
+            if (controller.isNeedLogin()) {
+                tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                    if (newValue) {
+                        Stage loginStage = createLoginStage(mainStage);
+                        Platform.runLater(() -> {
+                            Context.getInstance().setNextController(controller);
+                            loginStage.show();
+                        });
+                    }
+                });
+            }
+            tabPane.getTabs().add(tab);
+            selectIdx++;
             SingleSelectionModel<Tab> selectionModel = tabPane.getSelectionModel();
             selectionModel.select(selectIdx);
         }
+
         Scene scene = new Scene(tabPane);
         scene.getStylesheets().add("org/kordamp/bootstrapfx/bootstrapfx.css");
         scene.getStylesheets().add(App.class.getResource("/css/global.css").toExternalForm());
