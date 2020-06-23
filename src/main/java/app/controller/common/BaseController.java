@@ -10,7 +10,7 @@ import java.util.Map;
  * @author pickjob@126.com
  * @time 2019-05-16
  **/
-public abstract class BaseController {
+public class BaseController {
     private static final Logger logger = LogManager.getLogger(BaseController.class);
     private boolean needLogin;
     protected Context context;
@@ -20,7 +20,7 @@ public abstract class BaseController {
         this.context = context;
     }
 
-    public abstract void run();
+    public void run(){};
 
     public boolean isNeedLogin() {
         return needLogin;

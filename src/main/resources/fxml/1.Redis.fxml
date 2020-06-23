@@ -6,7 +6,9 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<SplitPane xmlns:fx="http://javafx.com/fxml" fx:controller="app.controller.RedisController">
+<SplitPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="app.controller.RedisController"
+>
     <VBox>
         <TextField fx:id="keyFilterTextField" promptText="Keys" />
         <TreeTableView fx:id="keyValueTreeTableView" prefHeight="${keyValueTreeTableView.parent.height}" />

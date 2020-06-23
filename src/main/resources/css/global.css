@@ -3,9 +3,15 @@
     -fx-font-size: 16;
 }
 
+VBox {
+    -fx-alignment: center;
+    -fx-spacing: 10;
+}
+
 GridPane {
     -fx-alignment: center;
     -fx-hgap: 10;
     -fx-vgap: 10;
     -fx-padding: 10;
 }
+

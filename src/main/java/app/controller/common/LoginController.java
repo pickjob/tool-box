@@ -21,25 +21,21 @@ public class LoginController extends BaseController {
     @FXML private TextField account;
     @FXML private TextField password;
 
+    @Override
+    public void init(Context context) {
+        super.init(context);
+    }
+
     @FXML
     public void mouseHandler(MouseEvent mouseEvent) {
-        context.getLoginEnumMap().put(Context.LoginKeyEnum.HOST, host.getText());
-        context.getLoginEnumMap().put(Context.LoginKeyEnum.PORT, port.getText());
-        context.getLoginEnumMap().put(Context.LoginKeyEnum.INDEX, index.getText());
-        context.getLoginEnumMap().put(Context.LoginKeyEnum.ACCOUNT, account.getText());
-        context.getLoginEnumMap().put(Context.LoginKeyEnum.PASSWORD, password.getText());
+        context.setLoginEnum(Context.LoginKeyEnum.HOST, host.getText());
+        context.setLoginEnum(Context.LoginKeyEnum.PORT, port.getText());
+        context.setLoginEnum(Context.LoginKeyEnum.INDEX, index.getText());
+        context.setLoginEnum(Context.LoginKeyEnum.ACCOUNT, account.getText());
+        context.setLoginEnum(Context.LoginKeyEnum.PASSWORD, password.getText());
         Node  source = (Node)mouseEvent.getSource();
         Context.getInstance().getNextController().run();
         Stage stage  = (Stage)source.getScene().getWindow();
         stage.close();
-    }
-
-    @Override
-    public void run() {
-        host.setText("");
-        port.setText("");
-        index.setText("");
-        account.setText("");
-        password.setText("");
     }
 }

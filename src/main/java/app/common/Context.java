@@ -1,7 +1,10 @@
 package app.common;
 
 import app.controller.common.BaseController;
+import app.data.redis.RedisData;
+import javafx.stage.Stage;
 
+import java.security.Key;
 import java.util.EnumMap;
 
 /**
@@ -10,11 +13,21 @@ import java.util.EnumMap;
  **/
 public class Context {
     private EnumMap<LoginKeyEnum, String> loginEnumMap = new EnumMap<LoginKeyEnum, String>(LoginKeyEnum.class);
+    private Stage mainStage;
+
     // 用于控制流程
     private BaseController nextController;
 
     public static final Context getInstance() {
         return ContextHolder.INSTANCE;
+    }
+
+    public Stage getMainStage() {
+        return mainStage;
+    }
+
+    public void setMainStage(Stage mainStage) {
+        this.mainStage = mainStage;
     }
 
     public BaseController getNextController() {
@@ -25,12 +38,12 @@ public class Context {
         this.nextController = nextController;
     }
 
-    public EnumMap<LoginKeyEnum, String> getLoginEnumMap() {
-        return loginEnumMap;
+    public String getLoginEnum(LoginKeyEnum keyEnum) {
+        return loginEnumMap.get(keyEnum);
     }
 
-    public void setLoginEnumMap(EnumMap<LoginKeyEnum, String> loginEnumMap) {
-        this.loginEnumMap = loginEnumMap;
+    public void setLoginEnum(LoginKeyEnum keyEnum, String value) {
+        this.loginEnumMap.put(keyEnum, value);
     }
 
     public static enum LoginKeyEnum {

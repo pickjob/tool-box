@@ -1,9 +1,5 @@
 package app.data.redis;
 
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 /**
  * @author: pickjob@126.com
  * @time: 2020-04-22
@@ -11,13 +7,12 @@ import java.util.TreeMap;
 public class RedisData<T> {
     private String key;
     private T value;
+    private Long ttl;
     private RedisDataType type;
-    private Map<String, RedisData<?>> children;
 
     public RedisData(String key) {
         this.key = key;
         this.type = RedisDataType.NONE;
-        this.children = new TreeMap<>();
     }
 
     public String getKey() {
@@ -40,15 +35,15 @@ public class RedisData<T> {
         return type;
     }
 
+    public Long getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(Long ttl) {
+        this.ttl = ttl;
+    }
+
     public void setType(RedisDataType type) {
         this.type = type;
-    }
-
-    public Map<String, RedisData<?>> getChildren() {
-        return children;
-    }
-
-    public void setChildren(Map<String, RedisData<?>> children) {
-        this.children = children;
     }
 }

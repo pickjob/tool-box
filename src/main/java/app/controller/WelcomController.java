@@ -12,8 +12,4 @@ import java.util.Map;
  **/
 public class WelcomController extends BaseController {
     private static final Logger logger = LogManager.getLogger(WelcomController.class);
-
-    @Override
-    public void run() {
-    }
 }

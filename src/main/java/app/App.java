@@ -1,11 +1,11 @@
 package app;
 
 import app.common.Context;
+import app.util.stage.StageUtils;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.JavaFXBuilderFactory;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.SingleSelectionModel;
@@ -13,16 +13,13 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import app.controller.common.BaseController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
@@ -37,6 +34,7 @@ public class App extends Application {
 
     @Override
     public void start(final Stage mainStage) throws Exception {
+        Context.getInstance().setMainStage(mainStage);
         Font.loadFont(App.class.getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
         URI uri = App.class.getResource("/fxml").toURI();
         List<Path> locations = new ArrayList<>();
@@ -48,14 +46,16 @@ public class App extends Application {
             path = Paths.get(uri);
         }
         Stream<Path> stream = Files.walk(path, MAX_DEEPTH);
-        stream.forEach(p -> {
+        stream.sorted( (p1, p2) -> {
+            return p1.getFileName().compareTo(p2.getFileName());
+        })
+              .forEach(p -> {
             if (!Files.isDirectory(p)) {
                 locations.add(p);
             }
         });
         TabPane tabPane = new TabPane();
         for (Path location : locations) {
-            int selectIdx = -1;
             FXMLLoader loader = new FXMLLoader();
             loader.setBuilderFactory(new JavaFXBuilderFactory());
             loader.setLocation(location.toUri().toURL());
@@ -76,22 +76,17 @@ public class App extends Application {
                 });
             }
             tabPane.getTabs().add(tab);
-            selectIdx++;
-            SingleSelectionModel<Tab> selectionModel = tabPane.getSelectionModel();
-            selectionModel.select(selectIdx);
         }
+        SingleSelectionModel<Tab> selectionModel = tabPane.getSelectionModel();
+        selectionModel.select(tabPane.getTabs().size() - 1);
 
         Scene scene = new Scene(tabPane);
         scene.getStylesheets().add("org/kordamp/bootstrapfx/bootstrapfx.css");
         scene.getStylesheets().add(App.class.getResource("/css/global.css").toExternalForm());
         mainStage.setTitle("My Personal Tool Box");
         mainStage.setScene(scene);
-        Screen screen = Screen.getPrimary();
-        Rectangle2D bounds = screen.getVisualBounds();
-        mainStage.setX(bounds.getWidth() / 4);
-        mainStage.setY(bounds.getHeight() / 4);
-        mainStage.setWidth(bounds.getWidth() / 2);
-        mainStage.setHeight(bounds.getHeight() / 2);
+
+        StageUtils.halfScreeStage(mainStage);
 
         mainStage.show();
     }

@@ -8,6 +8,12 @@ module pickjob.tool.box {
     requires org.apache.commons.lang3;
     // lettuce
     requires lettuce.core;
+    // jackson
+    requires com.fasterxml.jackson.databind;
+    // icon
+    requires org.kordamp.iconli.core;
+    requires org.kordamp.ikonli.javafx;
+    requires org.kordamp.ikonli.fontawesome;
 
     opens app to javafx.graphics
             , javafx.fxml
