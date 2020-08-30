@@ -1,17 +1,17 @@
 * {
     -fx-font-family: "Fira Code Medium";
     -fx-font-size: 16;
+    -fx-text-alignment: center;
+    -fx-alignment: center;
 }
 
-VBox {
-    -fx-alignment: center;
-    -fx-spacing: 10;
+HBox, VBox{
+    -fx-padding: 0.5em;
+    -fx-spacing: 0.5em;
 }
 
 GridPane {
-    -fx-alignment: center;
-    -fx-hgap: 10;
-    -fx-vgap: 10;
-    -fx-padding: 10;
+    -fx-hgap: 0.5em;
+    -fx-vgap: 0.5em;
+    -fx-padding: 0.5em;
 }
-

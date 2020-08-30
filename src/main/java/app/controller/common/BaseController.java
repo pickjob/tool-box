@@ -1,10 +1,10 @@
 package app.controller.common;
 
-import app.common.Context;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author pickjob@126.com
@@ -13,14 +13,15 @@ import java.util.Map;
 public class BaseController {
     private static final Logger logger = LogManager.getLogger(BaseController.class);
     private boolean needLogin;
-    protected Context context;
+    protected Object env;
 
-    public void init(Context context) {
-        logger.info("init ...");
-        this.context = context;
+    public void buildUIComponents() {
+        // first run after controller instance construct
     }
 
-    public void run(){};
+    public void init() {
+        // init controller after buildUIComponents
+    }
 
     public boolean isNeedLogin() {
         return needLogin;
@@ -28,5 +29,9 @@ public class BaseController {
 
     public void setNeedLogin(boolean needLogin) {
         this.needLogin = needLogin;
+    }
+
+    public void setEnv(Object env) {
+        this.env = env;
     }
 }

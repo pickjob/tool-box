@@ -14,33 +14,34 @@ application {
 
 dependencies {
     // logging
-    implementation 'org.apache.logging.log4j:log4j-api:2.11.1'
-    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
-    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
+    implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl:${log4jVersion}"
     // apache commons
     implementation 'org.apache.commons:commons-lang3:3.8'
     // lettuce
     implementation 'io.lettuce:lettuce-core:5.2.2.RELEASE'
     // jackson
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.11.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.11.0'
-
-    // bootstrap
-    implementation 'org.kordamp.bootstrapfx:bootstrapfx-core:0.2.4'
+    implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+    // rxjava
+    implementation "io.reactivex.rxjava3:rxjava:3.0.6"
+    // cssfx
+    implementation "fr.brouillard.oss:cssfx:11.4.0"
 
     // ikonli Icon pack
     implementation "org.kordamp.ikonli:ikonli-javafx:${ikonliVersion}"
     implementation "org.kordamp.ikonli:ikonli-fontawesome-pack:${ikonliVersion}"
 
     // javafx
-    implementation "org.openjfx:javafx-base:14:${os}"
-    implementation "org.openjfx:javafx-graphics:14:${os}"
-    implementation "org.openjfx:javafx-controls:14:${os}"
-    implementation "org.openjfx:javafx-fxml:14:${os}"
-    implementation "org.openjfx:javafx-media:14:${os}"
-    implementation "org.openjfx:javafx-swing:14:${os}"
-    implementation "org.openjfx:javafx-web:14:${os}"
+    implementation "org.openjfx:javafx-base:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-graphics:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-controls:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-fxml:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-media:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-swing:${fxVersion}:${os}"
+    implementation "org.openjfx:javafx-web:${fxVersion}:${os}"
 }
 /*
  *  Plugin: java配置
@@ -58,25 +59,16 @@ compileJava {
  */
 run {
     jvmArgs = [
-            '-Dio.netty.tryUnsafe=false'
+            '-Dio.netty.tryUnsafe=false',
+            '-Dcssfx.log=true',
+            '-Dcssfx.log.level=DEBUG'
     ]
     systemProperties.put("file.encoding", "UTF-8")
 }
 repositories {
-    mavenLocal()
     maven {
-        url "https://maven.aliyun.com/repository/central"
+        url "https://maven.aliyun.com/repository/public"
     }
-    maven {
-        url 'https://repo.spring.io/libs-release'
-    }
-    maven {
-        url 'https://repository.apache.org/content/repositories/releases'
-    }
-    maven {
-        url 'https://jcenter.bintray.com'
-    }
-    maven {
-        url 'https://repo1.maven.org/maven2'
-    }
+    jcenter()
+    mavenCentral()
 }

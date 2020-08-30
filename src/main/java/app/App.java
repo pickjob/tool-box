@@ -1,11 +1,13 @@
 package app;
 
-import app.common.Context;
-import app.util.stage.StageUtils;
+import app.util.Constants;
+import app.util.StageUtils;
+import fr.brouillard.oss.cssfx.CSSFX;
+import fr.brouillard.oss.cssfx.api.URIToPathConverter;
+import fr.brouillard.oss.cssfx.impl.URIToPathConverters;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
-import javafx.fxml.JavaFXBuilderFactory;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.SingleSelectionModel;
@@ -22,6 +24,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -34,43 +38,22 @@ public class App extends Application {
 
     @Override
     public void start(final Stage mainStage) throws Exception {
-        Context.getInstance().setMainStage(mainStage);
-        Font.loadFont(App.class.getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
-        URI uri = App.class.getResource("/fxml").toURI();
-        List<Path> locations = new ArrayList<>();
-        Path path = null;
-        if (uri.getScheme().equals("jar")) {
-            FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap());
-            path = fileSystem.getPath("/fxml");
-        } else {
-            path = Paths.get(uri);
-        }
-        Stream<Path> stream = Files.walk(path, MAX_DEEPTH);
-        stream.sorted( (p1, p2) -> {
-            return p1.getFileName().compareTo(p2.getFileName());
-        })
-              .forEach(p -> {
-            if (!Files.isDirectory(p)) {
-                locations.add(p);
-            }
-        });
+        Font.loadFont(getClass().getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
         TabPane tabPane = new TabPane();
-        for (Path location : locations) {
+        for (Path location : retriveFxmlPaths()) {
             FXMLLoader loader = new FXMLLoader();
-            loader.setBuilderFactory(new JavaFXBuilderFactory());
+            // 先加载，Controller才实例化
             loader.setLocation(location.toUri().toURL());
             Parent content = loader.load();
             final BaseController controller = loader.getController();
-            controller.init(Context.getInstance());
+            controller.buildUIComponents();
             Tab tab = new Tab(location.getFileName().toString());
             tab.setContent(content);
             if (controller.isNeedLogin()) {
                 tab.selectedProperty().addListener((observable, oldValue, newValue) -> {
                     if (newValue) {
-                        Stage loginStage = createLoginStage(mainStage);
                         Platform.runLater(() -> {
-                            Context.getInstance().setNextController(controller);
-                            loginStage.show();
+                            createLoginStageAndShow(mainStage, controller);
                         });
                     }
                 });
@@ -81,8 +64,7 @@ public class App extends Application {
         selectionModel.select(tabPane.getTabs().size() - 1);
 
         Scene scene = new Scene(tabPane);
-        scene.getStylesheets().add("org/kordamp/bootstrapfx/bootstrapfx.css");
-        scene.getStylesheets().add(App.class.getResource("/css/global.css").toExternalForm());
+        scene.getStylesheets().addAll(Constants.loadStyleSheets());
         mainStage.setTitle("My Personal Tool Box");
         mainStage.setScene(scene);
 
@@ -91,30 +73,70 @@ public class App extends Application {
         mainStage.show();
     }
 
-    private Stage createLoginStage(Stage mainStage) {
-        Stage loginStage = new Stage();
-        FXMLLoader loader = new FXMLLoader();
-        loader.setBuilderFactory(new JavaFXBuilderFactory());
-        loader.setLocation(App.class.getResource("/fxml/common/login.fxml"));
-        Parent content = null;
+    private void createLoginStageAndShow(Stage mainStage, BaseController parentController) {
         try {
-            content = loader.load();
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource("/fxml/common/login.fxml"));
+            Parent content = loader.load();
+            BaseController controller = loader.getController();
+            controller.setEnv(parentController);
+            controller.init();
+            Scene loginScene = new Scene(content);
+            loginScene.getStylesheets().addAll(Constants.loadStyleSheets());
+            Stage loginStage = new Stage();
+            loginStage.setScene(loginScene);
+            loginStage.setTitle("Login");
+            loginStage.initModality(Modality.WINDOW_MODAL);
+            loginStage.initOwner(mainStage );
+            loginStage.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        final BaseController controller = loader.getController();
-        controller.init(Context.getInstance());
-        Scene loginScene = new Scene(content);
-        loginScene.getStylesheets().add("org/kordamp/bootstrapfx/bootstrapfx.css");
-        loginScene.getStylesheets().add(App.class.getResource("/css/global.css").toExternalForm());
-        loginStage.setScene(loginScene);
-        loginStage.setTitle("Login");
-        loginStage.initModality(Modality.WINDOW_MODAL);
-        loginStage.initOwner(mainStage );
-        return loginStage;
+    }
+
+    private List<Path> retriveFxmlPaths() {
+        List<Path> locations = new ArrayList<>();
+        try {
+            URI uri = getClass().getResource("/fxml").toURI();
+            Path path = null;
+            if ("jar".equals(uri.getScheme())) {
+                FileSystem fileSystem = FileSystems.newFileSystem(uri, Collections.<String, Object>emptyMap());
+                path = fileSystem.getPath("/fxml");
+            } else {
+                path = Paths.get(uri);
+            }
+            Stream<Path> stream = Files.walk(path, MAX_DEEPTH);
+            stream.sorted((p1, p2) -> {
+                return p1.getFileName().compareTo(p2.getFileName());
+            }).forEach(p -> {
+                if (!Files.isDirectory(p)) {
+                    locations.add(p);
+                }
+            });
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return locations;
     }
 
     public static void main(String... args){
+        URIToPathConverter fileSystemConverter = new URIToPathConverter() {
+            @Override
+            public Path convert(String uri) {
+                System.out.println(uri);
+                Matcher m = Pattern.compile("file:/(.*\\.css)").matcher(uri);
+                if (m.matches()) {
+                    String path = m.group(1);
+                    return Paths.get(path);
+                }
+                return null;
+            }
+        };
+        CSSFX.CSSFXConfig config = CSSFX.addConverter(fileSystemConverter);
+        for (URIToPathConverter converter : URIToPathConverters.DEFAULT_CONVERTERS) {
+            config.addConverter(converter);
+        }
+        config.start();
         launch(args);
     }
 }

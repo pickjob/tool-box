@@ -10,6 +10,10 @@ module pickjob.tool.box {
     requires lettuce.core;
     // jackson
     requires com.fasterxml.jackson.databind;
+    // rxjava
+    requires io.reactivex.rxjava3;
+    // cssfx
+    requires fr.brouillard.oss.cssfx;
     // icon
     requires org.kordamp.iconli.core;
     requires org.kordamp.ikonli.javafx;

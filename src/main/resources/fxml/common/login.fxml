@@ -7,22 +7,25 @@
 <GridPane xmlns:fx="http://javafx.com/fxml"
           fx:controller="app.controller.common.LoginController"
 >
-    <Label text="Host" GridPane.rowIndex="0" GridPane.columnIndex="0" />
-    <TextField fx:id="host" GridPane.rowIndex="0" GridPane.columnIndex="1" text="172.16.40.64" />
+    <Label text="Profile" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+    <TextField fx:id="profile" GridPane.rowIndex="0" GridPane.columnIndex="1" text="redis" />
 
-    <Label text="Port" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-    <TextField fx:id="port" GridPane.rowIndex="1" GridPane.columnIndex="1" text="6379" />
+    <Label text="Host" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+    <TextField fx:id="host" GridPane.rowIndex="1" GridPane.columnIndex="1" text="redis" />
 
-    <Label text="Index" GridPane.rowIndex="2" GridPane.columnIndex="0" />
-    <TextField fx:id="index" GridPane.rowIndex="2" GridPane.columnIndex="1" text="2" />
+    <Label text="Port" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+    <TextField fx:id="port" GridPane.rowIndex="2" GridPane.columnIndex="1" text="6379" />
 
-    <Label text="Account" GridPane.rowIndex="3" GridPane.columnIndex="0" />
-    <TextField fx:id="account" GridPane.rowIndex="3" GridPane.columnIndex="1"  />
+    <Label text="Index" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+    <TextField fx:id="index" GridPane.rowIndex="3" GridPane.columnIndex="1" text="0" />
 
-    <Label text="Password" GridPane.rowIndex="4" GridPane.columnIndex="0" />
-    <TextField fx:id="password" GridPane.rowIndex="4" GridPane.columnIndex="1" text="Chuanglan@%#253" />
+    <Label text="Account" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+    <TextField fx:id="account" GridPane.rowIndex="4" GridPane.columnIndex="1"  />
 
-    <HBox alignment="BOTTOM_RIGHT" GridPane.rowIndex="5" GridPane.columnIndex="0" GridPane.columnSpan="2">
+    <Label text="Password" GridPane.rowIndex="5" GridPane.columnIndex="0" />
+    <TextField fx:id="password" GridPane.rowIndex="5" GridPane.columnIndex="1" />
+
+    <HBox alignment="BOTTOM_RIGHT" GridPane.rowIndex="6" GridPane.columnIndex="0" GridPane.columnSpan="2">
         <Button text="Connect" onMouseClicked="#mouseHandler" />
     </HBox>
 </GridPane>
