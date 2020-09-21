@@ -1,5 +1,7 @@
 package app.controller.common;
 
+import app.config.RedisConfig;
+import app.controller.RedisController;
 import app.enums.LoginKeyEnum;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -18,7 +20,7 @@ import java.util.EnumMap;
 public class LoginController extends BaseController {
     private static final Logger logger = LogManager.getLogger(LoginController.class);
     private BaseController previousController;
-    @FXML private TextField profile;
+//    @FXML private TextField profile;
     @FXML private TextField host;
     @FXML private TextField port;
     @FXML private TextField index;
@@ -26,11 +28,25 @@ public class LoginController extends BaseController {
     @FXML private TextField password;
 
     @Override
-    public void init() {
-        super.init();
+    public void buildUIComponents() {
+        super.buildUIComponents();
         if (env != null && env instanceof BaseController) {
             previousController = (BaseController)env;
+            if (previousController instanceof RedisController) {
+                EnumMap<LoginKeyEnum, String> loginEnumMap = RedisConfig.loadConfig();
+                if (loginEnumMap != null) {
+                    host.setText(loginEnumMap.get(LoginKeyEnum.HOST));
+                    port.setText(loginEnumMap.get(LoginKeyEnum.PORT));
+                    index.setText(loginEnumMap.get(LoginKeyEnum.INDEX));
+                    password.setText(loginEnumMap.get(LoginKeyEnum.PASSWORD));
+                }
+            }
         }
+    }
+
+    @Override
+    public void init() {
+        super.init();
     }
 
     @FXML
@@ -41,6 +57,9 @@ public class LoginController extends BaseController {
         loginEnumMap.put(LoginKeyEnum.INDEX, index.getText());
         loginEnumMap.put(LoginKeyEnum.ACCOUNT, account.getText());
         loginEnumMap.put(LoginKeyEnum.PASSWORD, password.getText());
+        if (previousController instanceof RedisController) {
+            RedisConfig.saveConfig(loginEnumMap);
+        }
         previousController.setEnv(loginEnumMap);
         previousController.init();
         Node  source = (Node)mouseEvent.getSource();

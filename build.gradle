@@ -25,6 +25,11 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+
+
+    implementation "org.apache.commons:commons-configuration2:2.7"
+    implementation "commons-beanutils:commons-beanutils:1.9.4"
+
     // rxjava
     implementation "io.reactivex.rxjava3:rxjava:3.0.6"
     // cssfx

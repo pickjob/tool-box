@@ -6,10 +6,13 @@ module pickjob.tool.box {
     // log4j
     requires org.apache.logging.log4j;
     requires org.apache.commons.lang3;
-    // lettuce
-    requires lettuce.core;
+
+    requires org.apache.commons.configuration2;
+
     // jackson
     requires com.fasterxml.jackson.databind;
+    // lettuce
+    requires lettuce.core;
     // rxjava
     requires io.reactivex.rxjava3;
     // cssfx

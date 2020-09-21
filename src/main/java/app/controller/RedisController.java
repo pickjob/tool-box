@@ -1,14 +1,14 @@
 package app.controller;
 
-import app.enums.LoginKeyEnum;
 import app.controller.common.BaseController;
+import app.data.TreeNode;
 import app.data.redis.RedisData;
 import app.data.redis.RedisDataType;
-import app.data.TreeNode;
+import app.enums.LoginKeyEnum;
 import app.scheduler.JavaFxScheduler;
 import app.util.Constants;
-import app.util.TreeNodeUtils;
 import app.util.StageUtils;
+import app.util.TreeNodeUtils;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.ScanArgs;
@@ -45,6 +45,7 @@ public class RedisController extends BaseController {
     private EnumMap<LoginKeyEnum, String> loginEnumMap;
     private volatile boolean isLoad = false;
     private RedisCommands<String, String> redisCommands;
+    private TreeNode<RedisData> rootRedisTreeNode = new TreeNode<>("Root", null);
     @FXML private TextField keyFilterTextField;
     @FXML private TreeTableView<RedisData> keyValueTreeTableView;
 
@@ -96,21 +97,16 @@ public class RedisController extends BaseController {
         operatorColumn.setCellFactory((TreeTableColumn<RedisData, RedisData> column) -> {
             return new TreeTableCell<RedisData, RedisData>() {
                 private Button refreshBtn = new Button();
-
                 @Override
                 protected void updateItem(RedisData item, boolean empty) {
-                    if (item == getItem()) {
-                        return;
-                    }
                     super.updateItem(item, empty);
                     if (item == null) {
                         super.setText(null);
                         super.setGraphic(null);
-                    } else {
+                    } else if (item.getValue() != null) {
                         refreshBtn.setGraphic(new FontIcon(FontAwesome.REFRESH));
                         refreshBtn.setOnMouseClicked(event -> {
-                            // TODO: Refresh Redis Key & Value
-                            logger.info("TODO");
+                            loadRedisTreeView(item.getCanonicalKey());
                         });
                         setGraphic(refreshBtn);
                     }
@@ -132,6 +128,8 @@ public class RedisController extends BaseController {
                         loader.setLocation(getClass().getResource("/fxml/common/detail.fxml"));
                         Parent content = loader.load();
                         final BaseController controller = loader.getController();
+                        System.out.println(row.getTreeItem());
+                        logger.info(row.getTreeItem().getValue());
                         controller.setEnv(row.getTreeItem().getValue());
                         controller.init();
                         Scene detailScene = new Scene(content);
@@ -139,7 +137,7 @@ public class RedisController extends BaseController {
                         Stage detailStage = new Stage();
                         detailStage.setScene(detailScene);
                         detailStage.setTitle("Redis Detail");
-                        StageUtils.quarterScreeStage(detailStage);
+                        StageUtils.quarterScreeStage(detailStage, false);
                         detailStage.initModality(Modality.WINDOW_MODAL);
                         detailStage.initOwner(keyValueTreeTableView.getScene().getWindow());
                         detailStage.showAndWait();
@@ -150,14 +148,15 @@ public class RedisController extends BaseController {
             });
             return row;
         });
+        keyValueTreeTableView.setPlaceholder(new Label("Ohh, it's empty."));
     }
 
     @Override
     public void init() {
         if (!isLoad) {
             if (env != null && env instanceof EnumMap) {
-                loginEnumMap = (EnumMap<LoginKeyEnum, String>)env;
-                loadRedisTreeView(env);
+                loginEnumMap = (EnumMap<LoginKeyEnum, String>) env;
+                loadRedisTreeView(null);
             }
         }
     }
@@ -167,25 +166,29 @@ public class RedisController extends BaseController {
         return true;
     }
 
-    private void loadRedisTreeView(Object env) {
+    private void loadRedisTreeView(String reloadKey) {
         try {
-            TreeNode<RedisData> rootRedisTreeNode = new TreeNode<>("Root", null);
             Observable.<String>create(emitter -> {
                 buildRedisCommand();
-                ScanArgs scanArgs = ScanArgs.Builder.limit(10);
-                for (KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs); true; ) {
-                    for (String key : keyScanCursor.getKeys()) {
-                        emitter.onNext(key);
+                if (StringUtils.isBlank(reloadKey)) {
+                    ScanArgs scanArgs = ScanArgs.Builder.limit(10);
+                    for (KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs); true; ) {
+                        for (String key : keyScanCursor.getKeys()) {
+                            emitter.onNext(key);
+                        }
+                        if (keyScanCursor.isFinished()) {
+                            emitter.onComplete();
+                            break;
+                        } else {
+                            keyScanCursor = redisCommands.scan(keyScanCursor);
+                        }
                     }
-                    if (keyScanCursor.isFinished()) {
-                        emitter.onComplete();
-                        break;
-                    } else {
-                        keyScanCursor = redisCommands.scan(keyScanCursor);
-                    }
+                } else {
+                    emitter.onNext(reloadKey);
+                    emitter.onComplete();
                 }
-            }).subscribeOn(Schedulers.newThread())
-                    .buffer(5, TimeUnit.SECONDS)
+            }).subscribeOn(Schedulers.single())
+                    .buffer(3, TimeUnit.SECONDS)
                     .map(list -> {
                         for (String key : list) {
                             TreeNodeUtils.appendKeyToTreeNode(rootRedisTreeNode, key, ":");
@@ -193,49 +196,53 @@ public class RedisController extends BaseController {
                         return rootRedisTreeNode;
                     })
                     .map(rootTreeNode -> {
-                        TreeNodeUtils.iteratorTreeNode(rootRedisTreeNode, redisTreeNode -> {
-                            if (redisTreeNode.getTreeItem() == null) {
-                                if (redisTreeNode.getCanonicalName() == null) {
-                                    // 当前节点为Root节点
-                                    RedisData redisData = new RedisData(redisTreeNode.getName(), redisTreeNode.getCanonicalName());
-                                    redisData.setType(RedisDataType.NONE);
-                                    TreeItem<RedisData> treeItem = new TreeItem<>(redisData);
-                                    redisTreeNode.setValue(redisData);
-                                    redisTreeNode.setTreeItem(treeItem);
-                                } else {
-                                    RedisData redisData = new RedisData(redisTreeNode.getName(), redisTreeNode.getCanonicalName());
-                                    redisData.setType(RedisDataType.value(redisCommands.type(redisTreeNode.getCanonicalName())));
-                                    switch (redisData.getType()) {
-                                        case STRING:
-                                            redisData.setValue(redisCommands.get(redisData.getCanonicalKey()));
-                                            break;
-                                        case LIST:
-                                            redisData.setValue(redisCommands.lrange(redisData.getCanonicalKey(), 0, -1));
-                                            break;
-                                        case SET:
-                                            redisData.setValue(redisCommands.smembers(redisData.getCanonicalKey()));
-                                            break;
-                                        case HASH:
-                                            redisData.setValue(redisCommands.hgetall(redisData.getCanonicalKey()));
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    if (redisData.getType() != RedisDataType.NONE) {
-                                        redisData.setTtl(redisCommands.ttl(redisTreeNode.getCanonicalName()));
-                                    }
-                                    TreeItem<RedisData> treeItem = new TreeItem<>(redisData);
-                                    redisTreeNode.setValue(redisData);
-                                    redisTreeNode.setTreeItem(treeItem);
-                                }
+                    TreeNodeUtils.iteratorTreeNode(rootRedisTreeNode, redisTreeNode -> {
+                        boolean load = false;
+                        if (StringUtils.isBlank(reloadKey)) {
+                            load = true;
+                        } else {
+                            load = reloadKey.equals(redisTreeNode.getCanonicalName());
+                        }
+                        if (!load) {
+                            return;
+                        }
+                        if (redisTreeNode.getCanonicalName() == null) {
+                            // 当前节点为Root节点
+                            RedisData redisData = new RedisData(redisTreeNode.getName(), redisTreeNode.getCanonicalName());
+                            redisData.setType(RedisDataType.NONE);
+                            TreeItem<RedisData> treeItem = new TreeItem<>(redisData);
+                            redisTreeNode.setValue(redisData);
+                            redisTreeNode.setTreeItem(treeItem);
+                        } else {
+                            RedisData redisData = new RedisData(redisTreeNode.getName(), redisTreeNode.getCanonicalName());
+                            redisData.setType(RedisDataType.value(redisCommands.type(redisTreeNode.getCanonicalName())));
+                            switch (redisData.getType()) {
+                                case STRING:
+                                    redisData.setValue(redisCommands.get(redisData.getCanonicalKey()));
+                                    break;
+                                case LIST:
+                                    redisData.setValue(redisCommands.lrange(redisData.getCanonicalKey(), 0, -1));
+                                    break;
+                                case SET:
+                                    redisData.setValue(redisCommands.smembers(redisData.getCanonicalKey()));
+                                    break;
+                                case HASH:
+                                    redisData.setValue(redisCommands.hgetall(redisData.getCanonicalKey()));
+                                    break;
+                                default:
+                                    break;
                             }
-                        });
-                        TreeNodeUtils.buildTreeItemRelation(rootTreeNode);
-                        return rootRedisTreeNode.getTreeItem();
-                    })
-                    .observeOn(JavaFxScheduler.platform())
-                    .subscribe(redisTreeItem -> {
-                        keyValueTreeTableView.setRoot(redisTreeItem);
+                            if (redisData.getType() != RedisDataType.NONE) {
+                                redisData.setTtl(redisCommands.ttl(redisTreeNode.getCanonicalName()));
+                            }
+                            redisTreeNode.setValue(redisData);
+                        }
+                    });
+                    return rootTreeNode;
+                }).observeOn(JavaFxScheduler.platform())
+                    .subscribe(rootTreeNode -> {
+                        TreeNodeUtils.buildTreeItemRelation(rootTreeNode, reloadKey);
+                        keyValueTreeTableView.setRoot(rootTreeNode.getTreeItem());
                     });
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

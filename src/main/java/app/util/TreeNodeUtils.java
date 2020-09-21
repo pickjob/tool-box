@@ -6,7 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -26,15 +28,24 @@ public class TreeNodeUtils {
         }
     }
 
-    public static <T> void buildTreeItemRelation(TreeNode<T> rootTreeNode) {
+    public static <T> void buildTreeItemRelation(TreeNode<T> rootTreeNode, String reloadKey) {
         TreeItem<T> rootTreeItem = rootTreeNode.getTreeItem();
+        if (rootTreeItem == null) {
+            rootTreeItem = new TreeItem<>(rootTreeNode.getValue());
+            rootTreeNode.setTreeItem(rootTreeItem);
+        }
         rootTreeItem.setExpanded(true);
         for (TreeNode<T> treeNode : rootTreeNode.getChildren()) {
             TreeItem<T> treeItem = treeNode.getTreeItem();
-            if (treeItem != null) {
+            if (treeItem == null) {
+                treeItem = new TreeItem<>(treeNode.getValue());
+                treeNode.setTreeItem(treeItem);
                 rootTreeItem.getChildren().add(treeItem);
-                buildTreeItemRelation(treeNode);
             }
+            if (StringUtils.isNotBlank(reloadKey) && reloadKey.equals(treeNode.getCanonicalName())) {
+                treeItem.setValue(treeNode.getValue());
+            }
+            buildTreeItemRelation(treeNode, reloadKey);
         }
     }
 

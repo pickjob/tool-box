@@ -10,21 +10,25 @@ import javafx.stage.Stage;
  **/
 public class StageUtils {
 
-    public static void halfScreeStage(Stage stage) {
+    public static void halfScreeStage(Stage stage, boolean heightLimit) {
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
         stage.setX(bounds.getWidth() / 4);
         stage.setY(bounds.getHeight() / 4);
         stage.setWidth(bounds.getWidth() / 2);
-        stage.setHeight(bounds.getHeight() / 2);
+        if (heightLimit) {
+            stage.setHeight(bounds.getHeight() / 2);
+        }
     }
 
-    public static void quarterScreeStage(Stage stage) {
+    public static void quarterScreeStage(Stage stage, boolean heightLimit) {
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
         stage.setX(bounds.getWidth() / 8 * 3);
         stage.setY(bounds.getHeight() / 8 * 3);
         stage.setWidth(bounds.getWidth() / 4);
-        stage.setHeight(bounds.getHeight() / 4);
+        if (heightLimit) {
+            stage.setHeight(bounds.getHeight() / 2);
+        }
     }
 }

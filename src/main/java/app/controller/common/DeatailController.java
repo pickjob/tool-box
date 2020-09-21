@@ -85,11 +85,32 @@ public class DeatailController extends BaseController {
                     TableView<HashData> tableView = new TableView<>();
                     TableColumn<HashData, String> keyCol = new TableColumn("Key");
                     keyCol.setCellValueFactory(new PropertyValueFactory<>("Key"));
+                    keyCol.setCellFactory((TableColumn<HashData, String> column) -> {
+                        return new TableCell<HashData, String>() {
+                            @Override
+                            protected void updateItem(String item, boolean empty) {
+                                super.updateItem(item, empty);
+                                setText(item);
+                                setTooltip(new Tooltip(item));
+                            }
+                        };
+                    });
                     TableColumn<HashData, String> valueCol = new TableColumn("Value");
                     valueCol.setCellValueFactory(new PropertyValueFactory<>("value"));
-                    keyCol.prefWidthProperty().bind(tableView.widthProperty().divide(2).subtract(1));
-                    valueCol.prefWidthProperty().bind(tableView.widthProperty().divide(2).subtract(1));
+                    valueCol.setCellFactory((TableColumn<HashData, String> column) -> {
+                        return new TableCell<HashData, String>() {
+                            @Override
+                            protected void updateItem(String item, boolean empty) {
+                                super.updateItem(item, empty);
+                                setText(item);
+                                setTooltip(new Tooltip(item));
+                            }
+                        };
+                    });
+                    keyCol.prefWidthProperty().bind(tableView.widthProperty().divide(2).subtract(5));
+                    valueCol.prefWidthProperty().bind(tableView.widthProperty().divide(2).subtract(5));
                     tableView.getColumns().addAll(keyCol, valueCol);
+                    tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
                     tableView.setItems(items);
                     container.getChildren().addAll(keyLabel, keyTextField, valueLabel, tableView);
                     break;

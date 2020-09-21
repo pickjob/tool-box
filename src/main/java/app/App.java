@@ -68,7 +68,7 @@ public class App extends Application {
         mainStage.setTitle("My Personal Tool Box");
         mainStage.setScene(scene);
 
-        StageUtils.halfScreeStage(mainStage);
+        StageUtils.halfScreeStage(mainStage, true);
 
         mainStage.show();
     }
@@ -80,17 +80,19 @@ public class App extends Application {
             Parent content = loader.load();
             BaseController controller = loader.getController();
             controller.setEnv(parentController);
+            controller.buildUIComponents();
             controller.init();
             Scene loginScene = new Scene(content);
             loginScene.getStylesheets().addAll(Constants.loadStyleSheets());
             Stage loginStage = new Stage();
+            StageUtils.quarterScreeStage(loginStage, false);
             loginStage.setScene(loginScene);
             loginStage.setTitle("Login");
             loginStage.initModality(Modality.WINDOW_MODAL);
             loginStage.initOwner(mainStage );
             loginStage.showAndWait();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
