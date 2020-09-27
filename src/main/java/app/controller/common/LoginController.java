@@ -1,7 +1,9 @@
 package app.controller.common;
 
 import app.config.RedisConfig;
+import app.config.ZookeeperConfig;
 import app.controller.RedisController;
+import app.controller.ZookeeperController;
 import app.enums.LoginKeyEnum;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -40,6 +42,12 @@ public class LoginController extends BaseController {
                     index.setText(loginEnumMap.get(LoginKeyEnum.INDEX));
                     password.setText(loginEnumMap.get(LoginKeyEnum.PASSWORD));
                 }
+            } else if (previousController instanceof ZookeeperController) {
+                EnumMap<LoginKeyEnum, String> loginEnumMap = ZookeeperConfig.loadConfig();
+                if (loginEnumMap != null) {
+                    host.setText(loginEnumMap.get(LoginKeyEnum.HOST));
+                    port.setText(loginEnumMap.get(LoginKeyEnum.PORT));
+                }
             }
         }
     }
@@ -59,6 +67,8 @@ public class LoginController extends BaseController {
         loginEnumMap.put(LoginKeyEnum.PASSWORD, password.getText());
         if (previousController instanceof RedisController) {
             RedisConfig.saveConfig(loginEnumMap);
+        } else if (previousController instanceof ZookeeperController) {
+            ZookeeperConfig.saveConfig(loginEnumMap);
         }
         previousController.setEnv(loginEnumMap);
         previousController.init();

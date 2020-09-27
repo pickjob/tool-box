@@ -1,5 +1,6 @@
-package app;
+package app.application;
 
+import app.controller.common.BaseController;
 import app.util.Constants;
 import app.util.StageUtils;
 import fr.brouillard.oss.cssfx.CSSFX;
@@ -16,14 +17,15 @@ import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import app.controller.common.BaseController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -32,12 +34,31 @@ import java.util.stream.Stream;
  * @author pickjob@126.com
  * @time 2019-05-13
  **/
-public class App extends Application {
-    private static final Logger logger = LogManager.getLogger(App.class);
+public class JavaFxApp extends Application {
+    private static final Logger logger = LogManager.getLogger(JavaFxApp.class);
     private static final int MAX_DEEPTH = 1;
 
     @Override
     public void start(final Stage mainStage) throws Exception {
+        // cssfx 配置
+        URIToPathConverter fileSystemConverter = new URIToPathConverter() {
+            @Override
+            public Path convert(String uri) {
+                System.out.println(uri);
+                Matcher m = Pattern.compile("file:/(.*\\.css)").matcher(uri);
+                if (m.matches()) {
+                    String path = m.group(1);
+                    return Paths.get(path);
+                }
+                return null;
+            }
+        };
+        CSSFX.CSSFXConfig config = CSSFX.addConverter(fileSystemConverter);
+        for (URIToPathConverter converter : URIToPathConverters.DEFAULT_CONVERTERS) {
+            config.addConverter(converter);
+        }
+        config.start();
+
         Font.loadFont(getClass().getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
         TabPane tabPane = new TabPane();
         for (Path location : retriveFxmlPaths()) {
@@ -119,26 +140,5 @@ public class App extends Application {
             logger.error(e.getMessage(), e);
         }
         return locations;
-    }
-
-    public static void main(String... args){
-        URIToPathConverter fileSystemConverter = new URIToPathConverter() {
-            @Override
-            public Path convert(String uri) {
-                System.out.println(uri);
-                Matcher m = Pattern.compile("file:/(.*\\.css)").matcher(uri);
-                if (m.matches()) {
-                    String path = m.group(1);
-                    return Paths.get(path);
-                }
-                return null;
-            }
-        };
-        CSSFX.CSSFXConfig config = CSSFX.addConverter(fileSystemConverter);
-        for (URIToPathConverter converter : URIToPathConverters.DEFAULT_CONVERTERS) {
-            config.addConverter(converter);
-        }
-        config.start();
-        launch(args);
     }
 }

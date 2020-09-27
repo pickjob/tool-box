@@ -1,37 +1,15 @@
 package app.data.redis;
 
+import app.data.TreeData;
+
 /**
  * @author: pickjob@126.com
  * @time: 2020-04-22
  **/
-public class RedisData {
-    private String key;
-    private String canonicalKey;
+public class RedisData extends TreeData {
     private Object value;
     private Long ttl;
     private RedisDataType type;
-
-    public RedisData(String key, String canonicalKey) {
-        this.key = key;
-        this.canonicalKey = canonicalKey;
-        this.type = RedisDataType.NONE;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getCanonicalKey() {
-        return canonicalKey;
-    }
-
-    public void setCanonicalKey(String canonicalKey) {
-        this.canonicalKey = canonicalKey;
-    }
 
     public Object getValue() {
         return value;

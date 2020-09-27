@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<SplitPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="app.controller.ZookeeperController"
+>
+    <VBox>
+        <TreeTableView fx:id="keyValueTreeTableView" prefHeight="${keyValueTreeTableView.parent.height}" />
+    </VBox>
+</SplitPane>
+

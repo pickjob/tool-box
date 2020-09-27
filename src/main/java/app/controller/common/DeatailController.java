@@ -2,6 +2,7 @@ package app.controller.common;
 
 import app.data.redis.HashData;
 import app.data.redis.RedisData;
+import app.data.zk.ZkData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -35,7 +36,7 @@ public class DeatailController extends BaseController {
         if (env instanceof RedisData) {
             RedisData redisData = (RedisData) env;
             Label keyLabel = new Label("KEY:");
-            TextField keyTextField = new TextField(redisData.getCanonicalKey());
+            TextField keyTextField = new TextField(redisData.getCanonicalName());
             Label valueLabel = new Label("VALUE:");
             switch (redisData.getType()) {
                 case STRING:
@@ -116,6 +117,36 @@ public class DeatailController extends BaseController {
                     break;
                 default:
                     break;
+            }
+        } else if (env instanceof ZkData) {
+            ZkData zkData = (ZkData) env;
+            Label keyLabel = new Label("KEY:");
+            TextField keyTextField = new TextField(zkData.getCanonicalName());
+            Label valueLabel = new Label("VALUE:");
+            String v = zkData.getValue();
+            if (v.startsWith("{")) {
+                try {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+                    TextArea valueTextField = new TextArea(writer.writeValueAsString(objectMapper.readValue(v, Map.class)));
+                    container.getChildren().addAll(keyLabel, keyTextField, valueLabel, valueTextField);
+                } catch (JsonProcessingException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                ;
+            } else if (v.startsWith("[")) {
+                try {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+                    TextArea valueTextField = new TextArea(writer.writeValueAsString(objectMapper.readValue(v, List.class)));
+                    container.getChildren().addAll(keyLabel, keyTextField, valueLabel, valueTextField);
+                } catch (JsonProcessingException e) {
+                    logger.error(e.getMessage(), e);
+                }
+                ;
+            } else {
+                TextArea valueTextField = new TextArea(v);
+                container.getChildren().addAll(keyLabel, keyTextField, valueLabel, valueTextField);
             }
         }
     }

@@ -1,6 +1,6 @@
 package app.util;
 
-import app.App;
+import app.application.JavaFxApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +18,7 @@ public class Constants {
 
     public static List<String> loadStyleSheets() {
         List<String> result = new ArrayList<>();
-        result.add(App.class.getResource("/css/global.css").toExternalForm());
+        result.add(JavaFxApp.class.getResource("/css/global.css").toExternalForm());
         return result;
     }
 
