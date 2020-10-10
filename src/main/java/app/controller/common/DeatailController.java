@@ -29,12 +29,12 @@ public class DeatailController extends BaseController {
     @FXML private VBox container;
 
     @Override
-    public void init() {
-        if (env == null) {
+    public void runWith(Object arg) {
+        if (arg == null) {
             return;
         }
-        if (env instanceof RedisData) {
-            RedisData redisData = (RedisData) env;
+        if (arg instanceof RedisData) {
+            RedisData redisData = (RedisData) arg;
             Label keyLabel = new Label("KEY:");
             TextField keyTextField = new TextField(redisData.getCanonicalName());
             Label valueLabel = new Label("VALUE:");
@@ -118,8 +118,8 @@ public class DeatailController extends BaseController {
                 default:
                     break;
             }
-        } else if (env instanceof ZkData) {
-            ZkData zkData = (ZkData) env;
+        } else if (arg instanceof ZkData) {
+            ZkData zkData = (ZkData) arg;
             Label keyLabel = new Label("KEY:");
             TextField keyTextField = new TextField(zkData.getCanonicalName());
             Label valueLabel = new Label("VALUE:");

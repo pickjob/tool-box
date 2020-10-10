@@ -1,6 +1,7 @@
 package app.controller;
 
 import app.controller.common.BaseController;
+import app.controller.common.TreeBaseController;
 import app.data.TreeNode;
 import app.data.redis.RedisData;
 import app.data.redis.RedisDataType;
@@ -18,8 +19,8 @@ import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -31,26 +32,22 @@ import org.apache.logging.log4j.Logger;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.net.URL;
 import java.net.URLEncoder;
-import java.util.EnumMap;
+import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author: pickjob@126.com
  * @time: 2020-04-08
  **/
-public class RedisController extends BaseController {
+public class RedisController extends TreeBaseController<RedisData> implements Initializable {
     private static final Logger logger = LogManager.getLogger(RedisController.class);
     private static final String SPLITTER = ":";
-    private EnumMap<LoginKeyEnum, String> loginEnumMap;
-    private volatile boolean isLoad = false;
     private RedisCommands<String, String> redisCommands;
-    private TreeNode<RedisData> rootRedisTreeNode;
-    @FXML private TextField keyFilterTextField;
-    @FXML private TreeTableView<RedisData> keyValueTreeTableView;
 
     @Override
-    public void buildUIComponents() {
+    public void initialize(URL location, ResourceBundle resources) {
         TreeTableColumn<RedisData, String> keyColumn = new TreeTableColumn<>("KEY");
         keyColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData, String> p) -> {
             RedisData redisData = p.getValue().getValue();
@@ -110,8 +107,7 @@ public class RedisController extends BaseController {
                         loader.setLocation(getClass().getResource("/fxml/common/detail.fxml"));
                         Parent content = loader.load();
                         final BaseController controller = loader.getController();
-                        controller.setEnv(data);
-                        controller.init();
+                        controller.runWith(data);
                         Scene detailScene = new Scene(content);
                         detailScene.getStylesheets().addAll(Constants.loadStyleSheets());
                         Stage detailStage = new Stage();
@@ -132,98 +128,96 @@ public class RedisController extends BaseController {
     }
 
     @Override
-    public void init() {
-        if (!isLoad) {
-            if (rootRedisTreeNode == null) {
-                rootRedisTreeNode = new TreeNode<>("Root", null);
-                TreeItem<RedisData> rootTreeItem = new TreeItem<>(new RedisData());
-                rootRedisTreeNode.setTreeItem(rootTreeItem);
-                keyValueTreeTableView.setRoot(rootRedisTreeNode.getTreeItem());
+    protected void loadTreeView(String reloadKey) {
+        Observable.<RedisCommands>fromSupplier(() -> {
+            if (redisCommands != null && redisCommands.getStatefulConnection().isOpen()) {
+                return redisCommands;
             }
-            if (env != null && env instanceof EnumMap) {
-                loginEnumMap = (EnumMap<LoginKeyEnum, String>) env;
-                loadTreeView(null);
+            String host = loginEnumMap.get(LoginKeyEnum.HOST);
+            String port = loginEnumMap.get(LoginKeyEnum.PORT);
+            String index = loginEnumMap.get(LoginKeyEnum.INDEX);
+            String password = loginEnumMap.get(LoginKeyEnum.PASSWORD);
+            StringBuilder redisUrlBuilder = new StringBuilder("redis://");
+            if (StringUtils.isNotBlank(password)) {
+                redisUrlBuilder.append(URLEncoder.encode(password, "UTF-8"));
             }
-        }
+            if (StringUtils.isNoneBlank(host)) {
+                redisUrlBuilder.append("@").append(host);
+            }
+            if (StringUtils.isNotBlank(port)) {
+                redisUrlBuilder.append(":").append(port);
+            }
+            if (StringUtils.isNotBlank(index)) {
+                redisUrlBuilder.append("/").append(index);
+            }
+            if (logger.isDebugEnabled()) {
+                logger.debug("redisUrl: {}", redisUrlBuilder);
+            }
+            RedisClient redisClient = RedisClient.create(redisUrlBuilder.toString());
+            StatefulRedisConnection<String, String> connection = redisClient.connect();
+            redisCommands = connection.sync();
+            return redisCommands;
+        })
+                .subscribeOn(Schedulers.single())
+                .<TreeNode<RedisData>>flatMap(zooKeeper -> {
+                    return Observable.<TreeNode<RedisData>>create(emitter -> {
+                        if (StringUtils.isBlank(reloadKey)) {
+                            ScanArgs scanArgs = ScanArgs.Builder.limit(10);
+                            for (KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs); true; ) {
+                                for (String key : keyScanCursor.getKeys()) {
+                                    emitter.onNext(TreeNodeUtils.buildTreeNode(key, buildData(key), SPLITTER));
+                                }
+                                if (keyScanCursor.isFinished()) {
+                                    break;
+                                } else {
+                                    keyScanCursor = redisCommands.scan(keyScanCursor);
+                                }
+                            }
+                        } else {
+                            emitter.onNext(TreeNodeUtils.buildTreeNode(reloadKey, buildData(reloadKey), SPLITTER));
+                        }
+                        emitter.onComplete();
+                    });
+                })
+                .buffer(3, TimeUnit.SECONDS)
+                .<TreeNode<RedisData>>map(list -> {
+                    for (TreeNode<RedisData> treeNode : list) {
+                        TreeNodeUtils.appendOrReplaceTreeNode(rootTreeNode, treeNode, SPLITTER, RedisData::new);
+                    }
+                    return rootTreeNode;
+                })
+                .observeOn(JavaFxScheduler.platform())
+                .subscribe(rootTreeNode -> {
+                    TreeNodeUtils.buildTreeItem(rootTreeNode);
+                    keyValueTreeTableView.getScene()
+                            .getWindow()
+                            .setOnCloseRequest(windowEvent -> {
+                                logger.info("closing ...");
+                                if (redisCommands != null && redisCommands.getStatefulConnection().isOpen()) {
+                                    try {
+                                        redisCommands.getStatefulConnection().close();
+                                    } catch (Exception e) {
+                                        logger.error(e.getMessage(), e);
+                                    }
+                                }
+                            });
+                    keyValueTreeTableView.refresh();
+                    finishLoad();
+                });
+        ;
     }
 
     @Override
-    public boolean isNeedLogin() {
-        return true;
+    protected void deleteKey(String key) {
+        redisCommands.del(key);
     }
 
-    private void loadTreeView(String reloadKey) {
-        try {
-            Observable.<RedisCommands>fromSupplier(() -> {
-                if (redisCommands != null) {
-                    return redisCommands;
-                }
-                String host = loginEnumMap.get(LoginKeyEnum.HOST);
-                String port = loginEnumMap.get(LoginKeyEnum.PORT);
-                String index = loginEnumMap.get(LoginKeyEnum.INDEX);
-                String password = loginEnumMap.get(LoginKeyEnum.PASSWORD);
-                StringBuilder redisUrlBuilder = new StringBuilder("redis://");
-                if (StringUtils.isNotBlank(password)) {
-                    redisUrlBuilder.append(URLEncoder.encode(password, "UTF-8"));
-                }
-                if (StringUtils.isNoneBlank(host)) {
-                    redisUrlBuilder.append("@").append(host);
-                }
-                if (StringUtils.isNotBlank(port)) {
-                    redisUrlBuilder.append(":").append(port);
-                }
-                if (StringUtils.isNotBlank(index)) {
-                    redisUrlBuilder.append("/").append(index);
-                }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("redisUrl: {}", redisUrlBuilder);
-                }
-                RedisClient redisClient = RedisClient.create(redisUrlBuilder.toString());
-                StatefulRedisConnection<String, String> connection = redisClient.connect();
-                redisCommands = connection.sync();
-                return redisCommands;
-            })
-                    .subscribeOn(Schedulers.single())
-                    .<TreeNode<RedisData>>flatMap(zooKeeper -> {
-                        return Observable.<TreeNode<RedisData>>create(emitter -> {
-                            if (StringUtils.isBlank(reloadKey)) {
-                                ScanArgs scanArgs = ScanArgs.Builder.limit(10);
-                                for (KeyScanCursor<String> keyScanCursor = redisCommands.scan(scanArgs); true; ) {
-                                    for (String key : keyScanCursor.getKeys()) {
-                                        emitter.onNext(TreeNodeUtils.buildTreeNode(key, buildData(key), SPLITTER));
-                                    }
-                                    if (keyScanCursor.isFinished()) {
-                                        break;
-                                    } else {
-                                        keyScanCursor = redisCommands.scan(keyScanCursor);
-                                    }
-                                }
-                            } else {
-                                emitter.onNext(TreeNodeUtils.buildTreeNode(reloadKey, buildData(reloadKey), SPLITTER));
-                            }
-                            emitter.onComplete();
-                        });
-                    })
-                    .buffer(3, TimeUnit.SECONDS)
-                    .<TreeNode<RedisData>>map(list -> {
-                        for (TreeNode<RedisData> treeNode: list) {
-                            TreeNodeUtils.appendOrReplaceTreeNode(rootRedisTreeNode, treeNode, SPLITTER, RedisData::new);
-                        }
-                        return rootRedisTreeNode;
-                    })
-                    .observeOn(JavaFxScheduler.platform())
-                    .subscribe(rootTreeNode -> {
-                        TreeNodeUtils.buildTreeItem(rootTreeNode);
-                        isLoad = true;
-                    });
-            ;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
-    private RedisData buildData(String key) {
+    @Override
+    protected RedisData buildData(String key) {
         RedisData redisData = new RedisData();
+        if (StringUtils.isBlank(key)) {
+            return redisData;
+        }
         redisData.setType(RedisDataType.value(redisCommands.type(key)));
         redisData.setTtl(redisCommands.ttl(key));
         switch (redisData.getType()) {

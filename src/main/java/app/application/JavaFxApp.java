@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 public class JavaFxApp extends Application {
     private static final Logger logger = LogManager.getLogger(JavaFxApp.class);
     private static final int MAX_DEEPTH = 1;
+    private static final Pattern cssFilePattern = Pattern.compile("file:/(.*\\.css)");
 
     @Override
     public void start(final Stage mainStage) throws Exception {
@@ -45,7 +46,7 @@ public class JavaFxApp extends Application {
             @Override
             public Path convert(String uri) {
                 System.out.println(uri);
-                Matcher m = Pattern.compile("file:/(.*\\.css)").matcher(uri);
+                Matcher m = cssFilePattern.matcher(uri);
                 if (m.matches()) {
                     String path = m.group(1);
                     return Paths.get(path);
@@ -67,7 +68,7 @@ public class JavaFxApp extends Application {
             loader.setLocation(location.toUri().toURL());
             Parent content = loader.load();
             final BaseController controller = loader.getController();
-            controller.buildUIComponents();
+            controller.runWith(null);
             Tab tab = new Tab(location.getFileName().toString());
             tab.setContent(content);
             if (controller.isNeedLogin()) {
@@ -100,9 +101,7 @@ public class JavaFxApp extends Application {
             loader.setLocation(getClass().getResource("/fxml/common/login.fxml"));
             Parent content = loader.load();
             BaseController controller = loader.getController();
-            controller.setEnv(parentController);
-            controller.buildUIComponents();
-            controller.init();
+            controller.runWith(parentController);
             Scene loginScene = new Scene(content);
             loginScene.getStylesheets().addAll(Constants.loadStyleSheets());
             Stage loginStage = new Stage();

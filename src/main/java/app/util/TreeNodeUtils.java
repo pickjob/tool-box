@@ -98,6 +98,12 @@ public class TreeNodeUtils {
         }
     }
 
+    public static <T extends TreeData> void buildTreeData(String canonicalName, T treeData, String splitter) {
+        List<String> pieces = treeKeys(canonicalName, splitter);
+        treeData.setName(pieces.get(pieces.size() - 1));
+        treeData.setCanonicalName(canonicalName);
+    }
+
     private static List<String> treeKeys(String canonicalName, String splitter) {
         List<String> result = new ArrayList<>();
         if (canonicalName.equals(splitter)) {

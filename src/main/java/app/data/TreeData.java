@@ -1,7 +1,7 @@
 package app.data;
 
 /**
- * @Author ws@yuan-mai.com
+ * @Author pickjob@126.com
  * @Date 2020-09-27
  */
 public class TreeData {

@@ -1,25 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.net.*?>
-<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 <SplitPane xmlns:fx="http://javafx.com/fxml"
            fx:controller="app.controller.RedisController"
 >
-    <VBox>
-        <HBox>
-            <TextField fx:id="keyFilterTextField" promptText="Keys" />
-            <Button>
-                <graphic>
-                    <FontIcon iconLiteral="fa-refresh" iconColor="red"/>
-                </graphic>
-            </Button>
-        </HBox>
-        <TreeTableView fx:id="keyValueTreeTableView" prefHeight="${keyValueTreeTableView.parent.height}" />
-    </VBox>
+    <TreeTableView fx:id="keyValueTreeTableView" prefHeight="${keyValueTreeTableView.parent.height}" />
 </SplitPane>
 

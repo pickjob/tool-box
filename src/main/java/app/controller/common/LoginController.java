@@ -30,8 +30,7 @@ public class LoginController extends BaseController {
     @FXML private TextField password;
 
     @Override
-    public void buildUIComponents() {
-        super.buildUIComponents();
+    public void runWith(Object env) {
         if (env != null && env instanceof BaseController) {
             previousController = (BaseController)env;
             if (previousController instanceof RedisController) {
@@ -52,11 +51,6 @@ public class LoginController extends BaseController {
         }
     }
 
-    @Override
-    public void init() {
-        super.init();
-    }
-
     @FXML
     public void mouseHandler(MouseEvent mouseEvent) {
         EnumMap<LoginKeyEnum, String> loginEnumMap = new EnumMap<>(LoginKeyEnum.class);
@@ -70,8 +64,7 @@ public class LoginController extends BaseController {
         } else if (previousController instanceof ZookeeperController) {
             ZookeeperConfig.saveConfig(loginEnumMap);
         }
-        previousController.setEnv(loginEnumMap);
-        previousController.init();
+        previousController.runWith(loginEnumMap);
         Node  source = (Node)mouseEvent.getSource();
         Stage stage  = (Stage)source.getScene().getWindow();
         stage.close();

@@ -1,3 +1,6 @@
-.table-column {
-    -fx-alignment: left;
+.text-field {
+    -fx-alignment: center;
+}
+.text {
+    -fx-text-alignment: center;
 }
