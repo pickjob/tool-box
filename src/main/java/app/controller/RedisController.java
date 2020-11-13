@@ -124,7 +124,7 @@ public class RedisController extends TreeBaseController<RedisData> implements In
             });
             return row;
         });
-        keyValueTreeTableView.setPlaceholder(new Label("Ohh, it's empty."));
+//        keyValueTreeTableView.setPlaceholder(new Label("Ohh, it's empty."));
     }
 
     @Override

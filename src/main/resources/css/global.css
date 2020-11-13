@@ -1,11 +1,15 @@
 * {
-    -fx-font-family: "Fira Code Medium";
+    -fx-font-family: 'FZXingKai-S04';
     -fx-font-size: 16;
 }
 
-HBox, VBox{
-    -fx-padding: 0.5em;
-    -fx-spacing: 0.5em;
+TreeTableView {
+    -fx-margin: 0em;
+}
+
+HBox, VBox {
+    -fx-padding: 0.5px;
+    -fx-spacing: 1em;
 }
 
 GridPane {

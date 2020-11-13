@@ -25,6 +25,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}"
 
     // lettuce
     implementation "io.lettuce:lettuce-core:5.2.2.RELEASE"
@@ -39,6 +40,7 @@ dependencies {
     // ikonli Icon pack
     implementation "org.kordamp.ikonli:ikonli-javafx:${ikonliVersion}"
     implementation "org.kordamp.ikonli:ikonli-fontawesome-pack:${ikonliVersion}"
+    implementation "org.kordamp.ikonli:ikonli-themify-pack:${ikonliVersion}"
 
     // javafx
     implementation "org.openjfx:javafx-base:${fxVersion}:${os}"
@@ -56,15 +58,18 @@ java {
     modularity.inferModulePath = true
 }
 compileJava {
-    sourceCompatibility = 14
-    targetCompatibility = 14
+    sourceCompatibility = 15
+    targetCompatibility = 15
     options.encoding = "UTF-8"
+    options.compilerArgs.add("--enable-preview")
 }
 /*
  * Plugin: Appliction
  */
 run {
     jvmArgs = [
+            "-Dfile.encoding=UTF-8",
+            "--enable-preview",
             "-Dio.netty.tryUnsafe=false",
             "-Dcssfx.log=true",
             "-Dcssfx.log.level=DEBUG"

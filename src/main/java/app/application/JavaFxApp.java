@@ -59,8 +59,7 @@ public class JavaFxApp extends Application {
             config.addConverter(converter);
         }
         config.start();
-
-        Font.loadFont(getClass().getResource("/others/FiraCode-Medium.otf").toExternalForm(), 0);
+        Font.loadFont(getClass().getResource("/others/fzxk.ttf").toExternalForm(), 0);
         TabPane tabPane = new TabPane();
         for (Path location : retriveFxmlPaths()) {
             FXMLLoader loader = new FXMLLoader();

@@ -10,31 +10,39 @@ import app.scheduler.JavaFxScheduler;
 import app.util.Constants;
 import app.util.StageUtils;
 import app.util.TreeNodeUtils;
+import app.util.YamlUtils;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableEmitter;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.EphemeralType;
 import org.kordamp.ikonli.fontawesome.FontAwesome;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.io.File;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +55,8 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
     private static final Logger logger = LogManager.getLogger(ZookeeperController.class);
     private static final String SPLITTER = "/";
     private ZooKeeper zooKeeper;
+    @FXML private Button importBtn;
+    @FXML private TextField importPath;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -80,7 +90,7 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
             ZkData redisData = p.getValue().getValue();
             return new ReadOnlyStringWrapper(redisData.getType() == null ? null : redisData.getType().name());
         });
-        TreeTableColumn<ZkData, ZkData> operatorColumn = new TreeTableColumn<>("operator");
+        TreeTableColumn<ZkData, ZkData> operatorColumn = new TreeTableColumn<>("OPERATOR");
         operatorColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<ZkData, ZkData> p) -> {
             ZkData zkData = p.getValue().getValue();
             return new ObjectBinding<ZkData>() {
@@ -104,11 +114,15 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
                         super.setGraphic(null);
                     } else if (item.getType() != null) {
                         if (hBox == null) {
-                            refreshBtn.setGraphic(new FontIcon(FontAwesome.REFRESH));
+                            FontIcon refreshIcon = new FontIcon(FontAwesome.REFRESH);
+                            refreshIcon.setIconSize(10);
+                            refreshBtn.setGraphic(refreshIcon);
                             refreshBtn.setOnMouseClicked(event -> {
                                 loadTreeView(item.getCanonicalName());
                             });
-                            deleteBtn.setGraphic(new FontIcon(FontAwesome.CLOSE));
+                            FontIcon delIcon = new FontIcon(FontAwesome.CLOSE);
+                            delIcon.setIconSize(10);
+                            deleteBtn.setGraphic(delIcon);
                             deleteBtn.setOnMouseClicked(event -> {
                                 deleteKey(item.getCanonicalName());
                             });
@@ -158,7 +172,48 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
             });
             return row;
         });
-        keyValueTreeTableView.setPlaceholder(new Label("Ohh, it's empty."));
+        importBtn.setOnMouseClicked(event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Open Resource File");
+            fileChooser.getExtensionFilters().addAll(
+                    new FileChooser.ExtensionFilter("Yaml Files", "*.yml", "*.yaml"));
+            fileChooser.setInitialDirectory(new File("D:\\code\\personal\\spring-cloud-starter\\spring-cloud-gateway\\src\\main\\resources"));
+            File selectedFile = fileChooser.showOpenDialog(((Node)event.getSource()).getScene().getWindow());
+            if (selectedFile != null) {
+                String path = importPath.getText();
+                logger.info("path: {}, file: {}", path, selectedFile.getAbsolutePath());
+                if (StringUtils.isBlank(path)) return;
+                Map<String, String> configMap = YamlUtils.covertYamlToProperties(selectedFile);
+                if (zooKeeper != null
+                        && zooKeeper.getState().isConnected()
+                        && zooKeeper.getState().isAlive()) {
+                    try {
+                        String[] pieces = path.split("/");
+                        String parent = "";
+                        for (String piece : pieces) {
+                            if (StringUtils.isBlank(piece)) continue;
+                            parent += "/" + piece;
+                            Stat stat = zooKeeper.exists(parent, null);
+                            if (stat == null) {
+                                zooKeeper.create(parent, "".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            }
+                        }
+                        for (String key : configMap.keySet()) {
+                            String val = configMap.get(key);
+                            Stat stat = zooKeeper.exists(path + "/" + key, null);
+                            if (stat == null) {
+                                zooKeeper.create(path + "/" + key, val.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                            } else {
+                                zooKeeper.setData(path + "/" + key, val.getBytes(), stat.getVersion());
+                            }
+                        }
+                        loadTreeView(null);
+                    } catch (Exception e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }
+            }
+        });
     }
 
     @Override
