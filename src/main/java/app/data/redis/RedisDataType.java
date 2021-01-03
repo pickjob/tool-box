@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * @author: pickjob@126.com
- * @time: 2020-04-22
+ * @date: 2020-04-22
  **/
 public enum RedisDataType {
     STRING,

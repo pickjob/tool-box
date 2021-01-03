@@ -8,40 +8,12 @@ import java.util.TreeSet;
 
 /**
  * @author: pickjob@126.com
- * @time: 2020-06-22
+ * @date: 2020-06-22
  **/
-public class TreeNode<T> implements Comparable<TreeNode<T>> {
-    private String name;
-    private String canonicalName;
+public class TreeNode<T extends TreeData> implements Comparable<TreeNode> {
     private T value;
     private TreeItem<T> treeItem;
-    private Set<TreeNode<T>> children;
-
-    public TreeNode() {
-        this.children = new TreeSet<>();
-    }
-
-    public TreeNode(String name, String canonicalName) {
-        this();
-        this.name = name;
-        this.canonicalName = canonicalName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCanonicalName() {
-        return canonicalName;
-    }
-
-    public void setCanonicalName(String canonicalName) {
-        this.canonicalName = canonicalName;
-    }
+    private Set<TreeNode<T>> children = new TreeSet<>();
 
     public T getValue() {
         return value;
@@ -68,31 +40,29 @@ public class TreeNode<T> implements Comparable<TreeNode<T>> {
     }
 
     @Override
-    public int compareTo(TreeNode<T> another) {
-        return this.getCanonicalName().compareTo(another.getCanonicalName());
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TreeNode<?> treeNode = (TreeNode<?>) o;
-        return canonicalName.equals(treeNode.canonicalName);
+        return Objects.equals(value, treeNode.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(canonicalName);
+        return Objects.hash(value);
     }
 
     @Override
     public String toString() {
         return "TreeNode{" +
-                "name='" + name + '\'' +
-                ", canonicalName='" + canonicalName + '\'' +
-                ", value=" + value +
-                ", treeItem=" + treeItem +
+                "name=" + value.getName() +
+                ", canonicalName=" + value.getCanonicalName() +
                 ", children=" + children +
                 '}';
+    }
+
+    @Override
+    public int compareTo(TreeNode o) {
+        return value.getCanonicalName().compareTo(o.getValue().getCanonicalName());
     }
 }

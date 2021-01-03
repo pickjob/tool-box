@@ -4,7 +4,7 @@ import app.data.TreeData;
 
 /**
  * @author: pickjob@126.com
- * @time: 2020-04-22
+ * @date: 2020-04-22
  **/
 public class RedisData extends TreeData {
     private Object value;
@@ -33,5 +33,10 @@ public class RedisData extends TreeData {
 
     public void setType(RedisDataType type) {
         this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }

@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @Author ws@yuan-mai.com
- * @Date 2020-11-11
+ * @author pickjob@126.com
+ * @date 2020-11-11
  */
 public class YamlUtils {
     private static final Logger logger = LogManager.getLogger(YamlUtils.class);

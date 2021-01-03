@@ -1,41 +1,22 @@
 package app.util;
 
-import app.application.JavaFxApp;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author: pickjob@126.com
  * @date: 2020-08-30
  **/
-public class Constants {
-    private static final Logger logger = LogManager.getLogger(Constants.class);
-    private static final String DEFAULT_INI_FILE_NAME = "tools.ini";
+public interface Constants {
+    static final String FXML_PATH = "fxml";
+    static final String FXML_LOGIN_PATH = "fxml/common/login-dialog.fxml";
+    static final String FXML_DETAIL_PATH = "fxml/common/detail.fxml";
 
-    public static List<String> loadStyleSheets() {
-        List<String> result = new ArrayList<>();
-        result.add(JavaFxApp.class.getResource("/css/global.css").toExternalForm());
-        return result;
-    }
+    static final String GLOBAL_CSS_PATH = "css/global.css";
+    static final String FONT_PATH = "others/sarasa.ttf";
 
-    public static File loadDefaultIniFile() {
-        Object userHome = System.getProperties().get("user.home");
-        if (userHome != null) {
-            try {
-                File configFile = new File(userHome + File.separator+ DEFAULT_INI_FILE_NAME);
-                if (!configFile.exists()) {
-                    configFile.getParentFile().mkdirs();
-                    configFile.createNewFile();
-                }
-                return configFile;
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-        return null;
-    }
+    static final String DEFAULT_INI_FILE = "tools.ini";
+
+    static final String COMPONENT_CSS_PATH = "css/component.css";
+
+    static final String JAR_SCHEMA = "jar";
+
+    static final int FXML_MAX_DEEPTH = 1;
 }

@@ -12,7 +12,7 @@
 >
     <HBox alignment="BASELINE_RIGHT">
         <Label text="Path:" />
-        <TextField fx:id="importPath" text="/spring-cloud-config/spring-cloud-gateway:dev" />
+        <TextField fx:id="importPath" promptText="/spring-cloud-config/spring-cloud-gateway:dev" />
         <Button fx:id="importBtn">
             <graphic>
                 <FontIcon iconLiteral="ti-import" iconSize="24"/>

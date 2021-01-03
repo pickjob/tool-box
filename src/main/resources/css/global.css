@@ -1,5 +1,5 @@
 * {
-    -fx-font-family: 'FZXingKai-S04';
+    -fx-font-family: 'Sarasa Term SC Semibold';
     -fx-font-size: 16;
 }
 
@@ -10,10 +10,4 @@ TreeTableView {
 HBox, VBox {
     -fx-padding: 0.5px;
     -fx-spacing: 1em;
-}
-
-GridPane {
-    -fx-hgap: 0.5em;
-    -fx-vgap: 0.5em;
-    -fx-padding: 0.5em;
 }

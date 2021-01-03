@@ -1,18 +1,26 @@
 package app.controller.common;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import app.config.Config;
+import app.enums.LoginKey;
+
+import java.util.EnumMap;
 
 /**
  * @author pickjob@126.com
- * @time 2019-05-16
+ * @date 2019-05-16
  **/
 public abstract class BaseController {
-    private static final Logger logger = LogManager.getLogger(BaseController.class);
+    public abstract boolean isNeedLogin();
 
-    abstract public void runWith(Object arg);
+    public Config loadDefaultConfig() {
+        throw new UnsupportedOperationException();
+    }
 
-    public boolean isNeedLogin() {
-        return false;
+    public void loadWithLoginEnumMap(EnumMap<LoginKey, String> loginEnumMap) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void loadWithData(Object data) {
+        throw new UnsupportedOperationException();
     }
 }

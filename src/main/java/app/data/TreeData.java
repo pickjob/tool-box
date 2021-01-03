@@ -1,12 +1,13 @@
 package app.data;
 
 /**
- * @Author pickjob@126.com
- * @Date 2020-09-27
+ * @author pickjob@126.com
+ * @date 2020-09-27
  */
-public class TreeData {
+public abstract class TreeData {
     private String name;
     private String canonicalName;
+    private Boolean mocked;
 
     public String getName() {
         return name;
@@ -22,5 +23,13 @@ public class TreeData {
 
     public void setCanonicalName(String canonicalName) {
         this.canonicalName = canonicalName;
+    }
+
+    public Boolean getMocked() {
+        return mocked;
+    }
+
+    public void setMocked(Boolean mocked) {
+        this.mocked = mocked;
     }
 }

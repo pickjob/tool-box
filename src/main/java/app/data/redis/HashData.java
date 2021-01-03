@@ -2,7 +2,7 @@ package app.data.redis;
 
 /**
  * @author: pickjob@126.com
- * @time: 2020-06-19
+ * @date: 2020-06-19
  **/
 public class HashData {
     private String key;

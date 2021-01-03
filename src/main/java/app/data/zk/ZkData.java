@@ -3,8 +3,8 @@ package app.data.zk;
 import app.data.TreeData;
 
 /**
- * @Author pickjob@126.com
- * @Date 2020-09-24
+ * @author pickjob@126.com
+ * @date 2020-09-24
  */
 public class ZkData extends TreeData {
     private String value;

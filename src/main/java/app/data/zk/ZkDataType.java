@@ -1,8 +1,8 @@
 package app.data.zk;
 
 /**
- * @Author ws@yuan-mai.com
- * @Date 2020-10-09
+ * @author pickjob@126.com
+ * @date 2020-10-09
  */
 public enum ZkDataType {
     PERSISTENT,

@@ -6,7 +6,7 @@ import javafx.stage.Stage;
 
 /**
  * @author: pickjob@126.com
- * @time: 2020-06-22
+ * @date: 2020-06-22
  **/
 public class StageUtils {
 
