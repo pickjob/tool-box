@@ -33,7 +33,7 @@ public class LoginDialog extends Dialog<EnumMap<LoginKey, String>> {
 
             dialogPane.setContent(content);
             dialogPane.getStyleClass().add("login-dialog");
-            dialogPane.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.COMPONENT_CSS_PATH));
+            dialogPane.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.GLOBAL_CSS_PATH));
 
             dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
             setTitle("请登录!");

@@ -30,10 +30,12 @@ public class DetailDialog extends Dialog<Void> {
 
             dialogPane.setContent(content);
             dialogPane.getStyleClass().add("detail-dialog");
-            dialogPane.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.COMPONENT_CSS_PATH));
+            dialogPane.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.GLOBAL_CSS_PATH));
 
             dialogPane.getButtonTypes().addAll(ButtonType.OK);
             setTitle("详情");
+
+            setResizable(true);
         } catch (Exception e) {
             logger.info(e.getMessage(), e);
         }

@@ -63,9 +63,9 @@ public class JavaFxApp extends Application {
         }
 //        SingleSelectionModel<Tab> selectionModel = tabPane.getSelectionModel();
 //        selectionModel.select(tabPane.getTabs().size() - 1);
+        tabPane.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.GLOBAL_CSS_PATH));
 
         Scene scene = new Scene(tabPane);
-        scene.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.GLOBAL_CSS_PATH));
         mainStage.setTitle("My Personal Tool Box");
         mainStage.setScene(scene);
 

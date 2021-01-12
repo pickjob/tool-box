@@ -14,8 +14,6 @@ public interface Constants {
 
     static final String DEFAULT_INI_FILE = "tools.ini";
 
-    static final String COMPONENT_CSS_PATH = "css/component.css";
-
     static final String JAR_SCHEMA = "jar";
 
     static final int FXML_MAX_DEEPTH = 1;

@@ -36,9 +36,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.io.File;
 import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -51,8 +49,11 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
     private static final String SPLITTER = "/";
     private ZookeeperConfig defaultConfig = new ZookeeperConfig();
     private ZooKeeper zooKeeper;
-    @FXML private Button importBtn;
+    @FXML private FontIcon searchBtn;
+    @FXML private TextField searchText;
     @FXML private TextField importPath;
+    @FXML private FontIcon importBtn;
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -65,12 +66,7 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
                 return new ReadOnlyStringWrapper(zkData.getCanonicalName());
             }
         });
-        TreeTableColumn<ZkData, String> valueColumn = new TreeTableColumn<>("VALUE");
-        valueColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<ZkData, String> p) -> {
-            ZkData redisData = p.getValue().getValue();
-            return new ReadOnlyStringWrapper(redisData.getValue());
-        });
-        valueColumn.setCellFactory((TreeTableColumn<ZkData, String> column) -> {
+        keyColumn.setCellFactory((TreeTableColumn<ZkData, String> column) -> {
             return new TreeTableCell<ZkData, String>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
@@ -85,10 +81,34 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
                 }
             };
         });
-        TreeTableColumn<ZkData, String> typeColumn = new TreeTableColumn<>("TYPE");
-        typeColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<ZkData, String> p) -> {
-            ZkData redisData = p.getValue().getValue();
-            return new ReadOnlyStringWrapper(redisData.getType() == null ? null : redisData.getType().name());
+        TreeTableColumn<ZkData, String> summary = new TreeTableColumn<>("SUMMARY");
+        summary.setCellValueFactory((TreeTableColumn.CellDataFeatures<ZkData, String> p) -> {
+            ZkData zkData = p.getValue().getValue();
+            String result = null;
+            if (zkData.getValue() != null) {
+                result = zkData.getType() + "[";
+                if ((zkData.getValue() + "").length() > 20) {
+                    result += (zkData.getValue() + "").substring(0, 20) + "...]";
+                } else {
+                    result += (zkData.getValue() + "") + "]";
+                }
+            }
+            return new ReadOnlyStringWrapper(result);
+        });
+        summary.setCellFactory((TreeTableColumn<ZkData, String> column) -> {
+            return new TreeTableCell<ZkData, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (StringUtils.isNotBlank(item)) {
+                        super.setText(item);
+                        setTooltip(new Tooltip(item));
+                    } else {
+                        super.setText(null);
+                        super.setGraphic(null);
+                    }
+                }
+            };
         });
         TreeTableColumn<ZkData, ZkData> operatorColumn = new TreeTableColumn<>("OPERATOR");
         operatorColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<ZkData, ZkData> p) -> {
@@ -102,64 +122,63 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
         });
         operatorColumn.setCellFactory((TreeTableColumn<ZkData, ZkData> column) -> {
             return new TreeTableCell<ZkData, ZkData>() {
-                private HBox hBox = new HBox();
-                private FontIcon refreshIcon = new FontIcon(FontAwesome.REFRESH);
-                private FontIcon deleteIcon = new FontIcon(FontAwesome.CLOSE);
+                HBox hBox = new HBox();
+                FontIcon refreshIcon = new FontIcon(FontAwesome.REFRESH);
+                FontIcon trashIcon = new FontIcon(FontAwesome.TRASH);
+                FontIcon moreIcon = new FontIcon(FontAwesome.COMMENT);
 
                 {
                     hBox.setAlignment(Pos.CENTER);
-                    hBox.getChildren().addAll(refreshIcon, deleteIcon);
+                    hBox.getChildren().addAll(refreshIcon, trashIcon, moreIcon);
                 }
 
                 @Override
                 protected void updateItem(ZkData item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item == null) {
-                        super.setText(null);
-                        super.setGraphic(null);
-                    } else if (item.getType() != null) {
+                    if (item != null && item.getType() != null) {
                         refreshIcon.setOnMouseClicked(event -> {
                             loadTreeView(item.getCanonicalName());
                         });
-                        deleteIcon.setOnMouseClicked(event -> {
+                        trashIcon.setOnMouseClicked(event -> {
                             deleteKey(item.getCanonicalName());
                             loadTreeView(null);
                         });
+                        moreIcon.setOnMouseClicked(event -> {
+                            try {
+                                DetailDialog detailDialog = new DetailDialog(item);
+                                detailDialog.showAndWait();
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        });
                         setGraphic(hBox);
+                    } else {
+                        super.setText(null);
+                        super.setGraphic(null);
                     }
                 }
             };
         });
         keyColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(3).subtract(1));
-        valueColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(3).subtract(1));
-        typeColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(2).subtract(1));
+        summary.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(5).subtract(1));
         operatorColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(2).subtract(1));
-        keyValueTreeTableView.getColumns().addAll(keyColumn, valueColumn, typeColumn, operatorColumn);
-        keyValueTreeTableView.setRowFactory(treeTableView -> {
-            TreeTableRow<ZkData> row = new TreeTableRow<>();
-            row.setOnMouseClicked(event -> {
-                TreeItem<ZkData> treeItem = ((TreeTableRow<ZkData>)event.getSource()).getTreeItem();
-                if (treeItem == null) {
-                    return;
-                }
-                ZkData data = treeItem.getValue();
-                if (data != null && data.getValue() != null) {
-                    try {
-                        DetailDialog detailDialog = new DetailDialog(data);
-                        detailDialog.showAndWait();
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
-            });
-            return row;
-        });
-        importBtn.setOnMouseClicked(this::importHandler);
+        keyValueTreeTableView.getColumns().addAll(keyColumn, summary, operatorColumn);
         if (rootTreeNode == null) {
             rootTreeNode = buildTreeNode("/", true);
             rootTreeNode.setTreeItem(new TreeItem<>(rootTreeNode.getValue()));
         }
         keyValueTreeTableView.setRoot(rootTreeNode.getTreeItem());
+        searchBtn.setOnMouseClicked(event -> {
+            String search = searchText.getText();
+            if (StringUtils.isNoneBlank(search)) {
+                Set<TreeNode<ZkData>> showSet = new HashSet<>();
+                Set<TreeNode<ZkData>> hideSet = new HashSet<>();
+                filter(rootTreeNode, name -> name.contains(search), showSet, hideSet);
+            } else {
+                buildTreeItem(rootTreeNode, null);
+            }
+        });
+        importBtn.setOnMouseClicked(this::importHandler);
     }
 
     @Override
@@ -169,6 +188,7 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
 
     @Override
     public void loadTreeView(String reloadKey) {
+        logger.info("reloadKey: {}", reloadKey);
         Observable.fromSupplier(() -> {
             if (zooKeeper != null
                     && zooKeeper.getState().isConnected()
@@ -230,6 +250,7 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
                         root.getTreeItem().getChildren().clear();
                     }
                     buildTreeItem(root, reloadKey);
+                    selectedOneBackTracing(root, reloadKey);
                     keyValueTreeTableView.refresh();
                 });
         ;
@@ -237,13 +258,19 @@ public class ZookeeperController extends TreeBaseController<ZkData> implements I
 
     @Override
     public void deleteKey(String key) {
-        TreeNode<ZkData> treeNode = buildTreeNode(key, false);
-        if (treeNode.getValue().getVersion() != null) {
-            try {
-                zooKeeper.delete(key, treeNode.getValue().getVersion());
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+        try {
+            List<String> children = zooKeeper.getChildren(key, null);
+            for (String child : children) {
+                String childPath = key + SPLITTER + child;
+                logger.info("childPath: {}", childPath);
+                deleteKey(childPath);
             }
+            TreeNode<ZkData> treeNode = buildTreeNode(key, false);
+            if (treeNode.getValue().getVersion() != null) {
+                zooKeeper.delete(key, treeNode.getValue().getVersion());
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
     }
 

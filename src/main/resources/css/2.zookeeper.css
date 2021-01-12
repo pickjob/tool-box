@@ -1,0 +1,10 @@
+.searchContainer {
+    -fx-spacing: 1em;
+    -fx-padding: 0.5em;
+    -fx-alignment: center;
+}
+
+.detailContainer HBox {
+    -fx-spacing: 1em;
+    -fx-alignment: center;
+}

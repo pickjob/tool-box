@@ -5,9 +5,11 @@
 
 <?import java.net.URL?>
 <VBox xmlns:fx="http://javafx.com/fxml"
-      fx:controller="app.controller.WelcomController"
+      fx:controller="app.controller.WelcomeController"
+      styleClass="welcomeContainer"
 >
     <Label text="Hello World!" />
+
     <stylesheets>
         <URL value="@../css/0.Welcome.css" />
     </stylesheets>

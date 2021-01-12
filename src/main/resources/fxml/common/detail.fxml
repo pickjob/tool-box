@@ -6,4 +6,8 @@
       fx:controller="app.components.DetailController"
       fx:id="container"
 >
+
+    <stylesheets>
+        <URL value="@../../css/component.css" />
+    </stylesheets>
 </VBox>

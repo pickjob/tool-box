@@ -42,7 +42,6 @@ public class ToastUtil {
             scene.setRoot(oldParent);
         });
 
-        scene.getStylesheets().add(ResourceUtils.loadClasspathResourceAsString(Constants.COMPONENT_CSS_PATH));
         scene.setRoot(stackPane);
 
         TranslateTransition translateTransition = new TranslateTransition(Duration.seconds(TIME_TRANSLATE_AND_FADE));

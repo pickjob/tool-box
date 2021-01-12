@@ -11,10 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * @author pickjob@126.com
@@ -89,6 +87,16 @@ public abstract class TreeBaseController<T extends TreeData> extends BaseControl
         }
     }
 
+    protected void filter(TreeNode<T> root, Function<String, Boolean> searchFunction, Set<TreeNode<T>> showSet, Set<TreeNode<T>> hideSet) {
+        for (TreeNode<T> node : root.getChildren()) {
+            if (searchBackTracing(node, searchFunction, showSet, hideSet)) {
+                filter(node, searchFunction, showSet, hideSet);
+            } else {
+                root.getTreeItem().getChildren().remove(node.getTreeItem());
+            }
+        }
+    }
+
     protected List<String> treeKeys(String canonicalName, String splitter) {
         List<String> result = new ArrayList<>();
         if (canonicalName.equals(splitter)) {
@@ -122,5 +130,37 @@ public abstract class TreeBaseController<T extends TreeData> extends BaseControl
             treeItem.getChildren().remove(node.getTreeItem());
             treeItem.getChildren().add(node.getTreeItem());
         }
+    }
+
+    protected void selectedOneBackTracing(TreeNode<T> node, String reloadKey) {
+        if (StringUtils.isBlank(reloadKey)) {
+            return;
+        }
+        if (reloadKey.equals(node.getValue().getCanonicalName())) {
+            keyValueTreeTableView.getSelectionModel().select(node.getTreeItem());
+        }
+        for (TreeNode<T> n : node.getChildren()) {
+            selectedOneBackTracing(n, reloadKey);
+        }
+    }
+
+    private boolean searchBackTracing(TreeNode<T> node, Function<String, Boolean> searchFunction,Set<TreeNode<T>> showSet, Set<TreeNode<T>> hideSet) {
+        if (hideSet.contains(node)) {
+            return false;
+        }
+        if (showSet.contains(node)) {
+            return true;
+        }
+        if (searchFunction.apply(node.getValue().getCanonicalName())) {
+            showSet.add(node);
+            return true;
+        }
+        for (TreeNode<T> n : node.getChildren()) {
+            if (searchBackTracing(n, searchFunction, showSet, hideSet)) {
+                return true;
+            }
+        }
+        hideSet.add(node);
+        return false;
     }
 }

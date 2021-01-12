@@ -8,7 +8,6 @@ import app.data.TreeNode;
 import app.data.redis.RedisData;
 import app.data.redis.RedisDataType;
 import app.scheduler.JavaFxScheduler;
-import app.util.ToastUtil;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.ScanArgs;
@@ -31,8 +30,10 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,7 +45,7 @@ public class RedisController extends TreeBaseController<RedisData> implements In
     private static final String SPLITTER = ":";
     private RedisConfig defaultConfig = new RedisConfig();
     private RedisCommands<String, String> redisCommands;
-    @FXML private Button searchBtn;
+    @FXML private FontIcon searchBtn;
     @FXML private TextField searchText;
 
     @Override
@@ -58,12 +59,36 @@ public class RedisController extends TreeBaseController<RedisData> implements In
                 return new ReadOnlyStringWrapper(redisData.getCanonicalName());
             }
         });
-        TreeTableColumn<RedisData, String> valueColumn = new TreeTableColumn<>("VALUE");
-        valueColumn.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData, String> p) -> {
-            RedisData redisData = p.getValue().getValue();
-            return new ReadOnlyStringWrapper(redisData.getValue() == null ? null : redisData.getValue() + "");
+        keyColumn.setCellFactory((TreeTableColumn<RedisData, String> column) -> {
+            return new TreeTableCell<RedisData, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (StringUtils.isNotBlank(item)) {
+                        super.setText(item);
+                        setTooltip(new Tooltip(item));
+                    } else {
+                        super.setText(null);
+                        super.setGraphic(null);
+                    }
+                }
+            };
         });
-        valueColumn.setCellFactory((TreeTableColumn<RedisData, String> column) -> {
+        TreeTableColumn<RedisData, String> summary = new TreeTableColumn<>("SUMMARY");
+        summary.setCellValueFactory((TreeTableColumn.CellDataFeatures<RedisData, String> p) -> {
+            RedisData redisData = p.getValue().getValue();
+            String result = null;
+            if (redisData.getValue() != null) {
+                result = redisData.getType() + "[";
+                if ((redisData.getValue() + "").length() > 20) {
+                    result += (redisData.getValue() + "").substring(0, 20) + "...]";
+                } else {
+                    result += (redisData.getValue() + "") + "]";
+                }
+            }
+            return new ReadOnlyStringWrapper(result);
+        });
+        summary.setCellFactory((TreeTableColumn<RedisData, String> column) -> {
             return new TreeTableCell<RedisData, String>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
@@ -95,64 +120,64 @@ public class RedisController extends TreeBaseController<RedisData> implements In
         });
         operatorColumn.setCellFactory((TreeTableColumn<RedisData, RedisData> column) -> {
             return new TreeTableCell<RedisData, RedisData>() {
-                private HBox hBox = new HBox();
-                private FontIcon refreshIcon = new FontIcon(FontAwesome.REFRESH);
-                private FontIcon deleteIcon = new FontIcon(FontAwesome.CLOSE);
+                HBox hBox = new HBox();
+                FontIcon refreshIcon = new FontIcon(FontAwesome.REFRESH);
+                FontIcon trashIcon = new FontIcon(FontAwesome.TRASH);
+                FontIcon moreIcon = new FontIcon(FontAwesome.COMMENT);
 
                 {
                     hBox.setAlignment(Pos.CENTER);
-                    hBox.getChildren().addAll(refreshIcon, deleteIcon);
+                    hBox.getChildren().addAll(refreshIcon, trashIcon, moreIcon);
                 }
 
                 @Override
                 protected void updateItem(RedisData item, boolean empty) {
                     super.updateItem(item, empty);
-                    if (item == null) {
-                        super.setText(null);
-                        super.setGraphic(null);
-                    } else if (item.getValue() != null) {
+                    if (item != null && !item.getMocked()) {
                         refreshIcon.setOnMouseClicked(event -> {
                             loadTreeView(item.getCanonicalName());
                         });
-                        deleteIcon.setOnMouseClicked(event -> {
+                        trashIcon.setOnMouseClicked(event -> {
                             deleteKey(item.getCanonicalName());
                             loadTreeView(null);
                         });
+                        moreIcon.setOnMouseClicked(event -> {
+                            try {
+                                DetailDialog detailDialog = new DetailDialog(item);
+                                detailDialog.showAndWait();
+                            } catch (Exception e) {
+                                logger.error(e.getMessage(), e);
+                            }
+                        });
                         setGraphic(hBox);
+                    } else {
+                        super.setText(null);
+                        super.setGraphic(null);
                     }
                 }
             };
         });
         keyColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(2).subtract(1));
-        valueColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(5).subtract(1));
+        summary.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(5).subtract(1));
         ttlColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).subtract(1));
         operatorColumn.prefWidthProperty().bind(keyValueTreeTableView.widthProperty().divide(10).multiply(2).subtract(1));
-        keyValueTreeTableView.getColumns().addAll(keyColumn, valueColumn, ttlColumn, operatorColumn);
-        keyValueTreeTableView.setRowFactory(treeTableView -> {
-            TreeTableRow<RedisData> row = new TreeTableRow<>();
-            row.setOnMouseClicked(event -> {
-                TreeItem<RedisData> treeItem = ((TreeTableRow<RedisData>)event.getSource()).getTreeItem();
-                if (treeItem == null) {
-                    return;
-                }
-                RedisData data = treeItem.getValue();
-                if (data != null && data.getValue() != null) {
-                    try {
-                        DetailDialog detailDialog = new DetailDialog(data);
-                        detailDialog.showAndWait();
-                    } catch (Exception e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
-            });
-            return row;
-        });
+        keyValueTreeTableView.getColumns().addAll(keyColumn, summary, ttlColumn, operatorColumn);
         if (rootTreeNode == null) {
             rootTreeNode = buildTreeNode("ROOT", true);
             rootTreeNode.getValue().setCanonicalName(null);
             rootTreeNode.setTreeItem(new TreeItem<>(rootTreeNode.getValue()));
         }
         keyValueTreeTableView.setRoot(rootTreeNode.getTreeItem());
+        searchBtn.setOnMouseClicked(event -> {
+            String search = searchText.getText();
+            if (StringUtils.isNoneBlank(search)) {
+                Set<TreeNode<RedisData>> showSet = new HashSet<>();
+                Set<TreeNode<RedisData>> hideSet = new HashSet<>();
+                filter(rootTreeNode, name -> name.contains(search), showSet, hideSet);
+            } else {
+                buildTreeItem(rootTreeNode, null);
+            }
+        });
     }
 
     @Override
@@ -180,9 +205,6 @@ public class RedisController extends TreeBaseController<RedisData> implements In
             }
             if (StringUtils.isNotBlank(conf.getIndex())) {
                 redisUrlBuilder.append("/").append(conf.getIndex());
-            }
-            if (logger.isDebugEnabled()) {
-                logger.debug("redisUrl: {}", redisUrlBuilder);
             }
             RedisClient redisClient = RedisClient.create(redisUrlBuilder.toString());
             StatefulRedisConnection<String, String> connection = redisClient.connect();
@@ -239,7 +261,7 @@ public class RedisController extends TreeBaseController<RedisData> implements In
                         root.getTreeItem().getChildren().clear();
                     }
                     buildTreeItem(root, reloadKey);
-                    keyValueTreeTableView.setRoot(root.getTreeItem());
+                    selectedOneBackTracing(root, reloadKey);
                     keyValueTreeTableView.refresh();
                 });
         ;
@@ -262,6 +284,7 @@ public class RedisController extends TreeBaseController<RedisData> implements In
             treeNode.setValue(redisData);
             return treeNode;
         }
+        redisData.setMocked(false);
         redisData.setType(RedisDataType.value(redisCommands.type(canonicalName)));
         redisData.setTtl(redisCommands.ttl(canonicalName));
         switch (redisData.getType()) {
@@ -278,7 +301,7 @@ public class RedisController extends TreeBaseController<RedisData> implements In
                 redisData.setValue(redisCommands.hgetall(canonicalName));
                 break;
             default:
-                ToastUtil.makeText(keyValueTreeTableView, String.format("unknow type %s", redisCommands.type(canonicalName)));
+                logger.info("unknown type: {}", redisCommands.type(canonicalName));
                 break;
         }
         treeNode.setValue(redisData);

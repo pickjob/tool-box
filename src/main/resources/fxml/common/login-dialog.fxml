@@ -2,13 +2,14 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import java.net.URL?>
 <GridPane xmlns:fx="http://javafx.com/fxml"
           fx:controller="app.components.LoginController">
     <Label text="Profile" GridPane.rowIndex="0" GridPane.columnIndex="0" />
     <ComboBox fx:id="profile" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
     <Label text="Host" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-    <TextField fx:id="host" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+    <TextField fx:id="host" GridPane.rowIndex="1" GridPane.columnIndex="1" prefWidth="150" />
 
     <Label text="Port" GridPane.rowIndex="2" GridPane.columnIndex="0" />
     <TextField fx:id="port" GridPane.rowIndex="2" GridPane.columnIndex="1" />
@@ -22,4 +23,7 @@
     <Label text="Password" GridPane.rowIndex="5" GridPane.columnIndex="0" />
     <TextField fx:id="password" GridPane.rowIndex="5" GridPane.columnIndex="1" />
 
+    <stylesheets>
+        <URL value="@../../css/component.css" />
+    </stylesheets>
 </GridPane>

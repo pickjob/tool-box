@@ -2,12 +2,3 @@
     -fx-font-family: 'Sarasa Term SC Semibold';
     -fx-font-size: 16;
 }
-
-TreeTableView {
-    -fx-margin: 0em;
-}
-
-HBox, VBox {
-    -fx-padding: 0.5px;
-    -fx-spacing: 1em;
-}
